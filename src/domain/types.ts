@@ -120,7 +120,7 @@ export type Area = {
 
 export type PedagogicalHour = {
     id: string;
-    name: string;
+    name: string | Record<string, string>;
 };
 
 export type GradeSectionFormData = {

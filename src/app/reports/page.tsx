@@ -19,6 +19,40 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 const isValidDate = (d: any): d is Date => d instanceof Date && !isNaN(d.getTime());
+
+// Helper function to safely extract the name from pedagogical hour data
+const getPedagogicalHourName = (hour: any): string => {
+  if (typeof hour.name === 'string') {
+    // Check if it's a JSON string
+    if (hour.name.startsWith('{') && hour.name.endsWith('}')) {
+      try {
+        // Parse the JSON string
+        const obj = JSON.parse(hour.name) as Record<string, string>;
+        const keys = Object.keys(obj).sort((a, b) => parseInt(a) - parseInt(b));
+        return keys.map(key => obj[key]).join('');
+      } catch (error) {
+        console.warn('Error parsing JSON string:', error);
+        return hour.name; // Return original string if parsing fails
+      }
+    }
+    // If it's a regular string, return it
+    return hour.name;
+  }
+  
+  if (typeof hour.name === 'object' && hour.name !== null) {
+    try {
+      const obj = hour.name as Record<string, string>;
+      const keys = Object.keys(obj).sort((a, b) => parseInt(a) - parseInt(b));
+      return keys.map(key => obj[key]).join('');
+    } catch (error) {
+      console.warn('Error processing pedagogical hour name:', error);
+      return 'Hora Pedagógica';
+    }
+  }
+  
+  return 'Hora Pedagógica';
+};
+
 import { useToast } from '@/hooks/use-toast';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -188,9 +222,10 @@ export default function ReportsPage() {
         data.forEach(reservation => {
             const dayName = daysOfWeek[reservation.startTime.getDay()];
             if (usageByDay[dayName]) {
-                const hourName = pedagogicalHours.find(h => h.name === reservation.purposeDetails.activityName)?.name;
-                if (hourName) {
-                     if (!usageByDay[dayName][hourName]) {
+                const hour = pedagogicalHours.find(h => getPedagogicalHourName(h) === reservation.purposeDetails.activityName);
+                if (hour) {
+                    const hourName = getPedagogicalHourName(hour);
+                    if (!usageByDay[dayName][hourName]) {
                         usageByDay[dayName][hourName] = 0;
                     }
                     usageByDay[dayName][hourName]++;
@@ -201,7 +236,8 @@ export default function ReportsPage() {
         const chartData = Object.entries(usageByDay).map(([day, hours]) => {
             const entry: { day: string; [key: string]: any } = { day };
             pedagogicalHours.forEach(hour => {
-                entry[hour.name] = hours[hour.name] || 0;
+                const hourName = getPedagogicalHourName(hour);
+                entry[hourName] = hours[hourName] || 0;
             });
             return entry;
         });
@@ -612,7 +648,7 @@ export default function ReportsPage() {
                             {pedagogicalHours.map((hour, index) => (
                                 <Bar 
                                     key={hour.id} 
-                                    dataKey={hour.name} 
+                                    dataKey={getPedagogicalHourName(hour)} 
                                     stackId="a" 
                                     fill={chartColors[index % chartColors.length]} 
                                     radius={[4, 4, 0, 0]}

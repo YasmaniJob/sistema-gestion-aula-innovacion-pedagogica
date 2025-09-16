@@ -51,6 +51,83 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { useData } from '@/context/data-provider-refactored';
 import { useStableDataModal } from '@/hooks/use-stable-modal';
+import type { PedagogicalHour } from '@/domain/types';
+
+// Helper function to safely extract the name from pedagogical hour data
+const getPedagogicalHourName = (hour: PedagogicalHour): string => {
+  if (typeof hour.name === 'string') {
+    // Check if it's a JSON string
+    if (hour.name.startsWith('{') && hour.name.endsWith('}')) {
+      try {
+        // Parse the JSON string
+        const obj = JSON.parse(hour.name) as Record<string, string>;
+        const keys = Object.keys(obj).sort((a, b) => parseInt(a) - parseInt(b));
+        return keys.map(key => obj[key]).join('');
+      } catch (error) {
+        console.warn('Error parsing JSON string:', error);
+        return hour.name; // Return original string if parsing fails
+      }
+    }
+    // If it's a regular string, return it
+    return hour.name;
+  }
+  
+  // If it's an object (JSON), try to reconstruct the text
+  if (typeof hour.name === 'object' && hour.name !== null) {
+    try {
+      // Convert object with numeric keys to string
+      const obj = hour.name as Record<string, string>;
+      const keys = Object.keys(obj).sort((a, b) => parseInt(a) - parseInt(b));
+      return keys.map(key => obj[key]).join('');
+    } catch (error) {
+      console.warn('Error processing pedagogical hour name:', error);
+      return 'Hora Pedagógica';
+    }
+  }
+  
+  return 'Hora Pedagógica';
+};
+
+// Helper function to safely extract activity name from reservation data
+const getActivityName = (activityName: any, pedagogicalHours: PedagogicalHour[]): string => {
+  if (!activityName) return 'No especificado';
+  
+  // Find the pedagogical hour that matches this activity name
+  const matchingHour = pedagogicalHours.find(hour => {
+    const hourName = getPedagogicalHourName(hour);
+    return hourName === activityName || hour.name === activityName;
+  });
+  
+  if (matchingHour) {
+    return getPedagogicalHourName(matchingHour);
+  }
+  
+  // If no match found, try to parse as JSON if it looks like one
+  if (typeof activityName === 'string') {
+    if (activityName.startsWith('{') && activityName.endsWith('}')) {
+      try {
+        const obj = JSON.parse(activityName) as Record<string, string>;
+        const keys = Object.keys(obj).sort((a, b) => parseInt(a) - parseInt(b));
+        return keys.map(key => obj[key]).join('');
+      } catch (error) {
+        console.warn('Error parsing activity name JSON:', error);
+      }
+    }
+    return activityName;
+  }
+  
+  if (typeof activityName === 'object' && activityName !== null) {
+    try {
+      const obj = activityName as Record<string, string>;
+      const keys = Object.keys(obj).sort((a, b) => parseInt(a) - parseInt(b));
+      return keys.map(key => obj[key]).join('');
+    } catch (error) {
+      console.warn('Error processing activity name object:', error);
+    }
+  }
+  
+  return 'No especificado';
+};
 
 
 const statusConfig: Record<ReservationStatus, { icon: React.ElementType; bgClass: string; borderClass: string; textClass: string; }> = {
@@ -83,7 +160,7 @@ export function ReservationCalendar({
     onDateChange: externalOnDateChange,
 }: ReservationCalendarProps) {
   const { currentUser, pedagogicalHours } = useData();
-  const timeSlots = useMemo(() => pedagogicalHours.map(h => h.name), [pedagogicalHours]);
+  const timeSlots = useMemo(() => pedagogicalHours.map(h => getPedagogicalHourName(h)), [pedagogicalHours]);
   const [internalCurrentDate, setInternalCurrentDate] = useState(new Date());
 
   const currentDate = externalCurrentDate ?? internalCurrentDate;
@@ -199,7 +276,7 @@ export function ReservationCalendar({
     );
   }
 
-  function ReservationCellContent({ reservation }: { reservation: Reservation }) {
+  function ReservationCellContent({ reservation, pedagogicalHours }: { reservation: Reservation; pedagogicalHours: PedagogicalHour[] }) {
     const config = statusConfig[reservation.status];
 
     return (
@@ -213,7 +290,7 @@ export function ReservationCalendar({
             <div className="flex-grow space-y-1 overflow-hidden">
                 <p className={cn("font-bold", config.textClass)}>{reservation.user?.name || 'Usuario Desconocido'}</p>
                 <p className={cn("truncate", config.textClass, "opacity-80")}>
-                    {reservation.purposeDetails?.activityName || 'Actividad'}
+                    {getActivityName(reservation.purposeDetails?.activityName, pedagogicalHours) || 'Actividad'}
                 </p>
             </div>
             <div className="mt-auto">
@@ -271,7 +348,7 @@ export function ReservationCalendar({
                                       onClick={() => handleSlotClick(day, slot)}
                                   >
                                       {reservation ? (
-                                          <ReservationCellContent reservation={reservation} />
+                                          <ReservationCellContent reservation={reservation} pedagogicalHours={pedagogicalHours} />
                                       ) : (
                                         <div className="h-full w-full relative">
                                           {isSelected && (
@@ -498,7 +575,7 @@ function ReservationDialog({ reservation, isOpen, onUpdateStatus, onOpenChange, 
         }
     }, [onUpdateStatus, reservation, processingStatus, toast, onOpenChange]);
 
-    const { currentUser } = useData();
+    const { currentUser, pedagogicalHours } = useData();
     const canManage = currentUser?.role === 'Admin' || (currentUser?.id === reservation?.user?.id && currentUser?.role === 'Docente');
 
 
@@ -513,7 +590,7 @@ function ReservationDialog({ reservation, isOpen, onUpdateStatus, onOpenChange, 
                         {canManage ? "Gestionar Reserva" : "Detalles de la Reserva"}
                     </DialogTitle>
                     <DialogDescription className="text-sm text-gray-600 mt-1">
-                        {format(reservation.startTime, "eeee, d 'de' MMMM", { locale: es })} - {reservation.purposeDetails?.timeSlot || reservation.purposeDetails?.activityName || 'Hora no especificada'}
+                        {format(reservation.startTime, "eeee, d 'de' MMMM", { locale: es })} - {reservation.purposeDetails?.timeSlot || getActivityName(reservation.purposeDetails?.activityName, pedagogicalHours) || 'Hora no especificada'}
                     </DialogDescription>
                 </DialogHeader>
                 <div className="px-6 py-6 space-y-6">
@@ -544,7 +621,7 @@ function ReservationDialog({ reservation, isOpen, onUpdateStatus, onOpenChange, 
                             </div>
                             <div className="flex-1">
                                 <p className="text-sm font-semibold text-gray-700 mb-1">Actividad</p>
-                                <p className="text-base text-gray-900">{reservation.purposeDetails?.activityName || 'No especificado'}</p>
+                                <p className="text-base text-gray-900">{getActivityName(reservation.purposeDetails?.activityName, pedagogicalHours)}</p>
                             </div>
                         </div>
                         

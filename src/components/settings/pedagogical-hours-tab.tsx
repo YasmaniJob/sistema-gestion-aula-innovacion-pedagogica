@@ -16,6 +16,41 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useData } from '@/context/data-provider-refactored';
 import type { PedagogicalHour } from '@/domain/types';
 
+// Helper function to safely extract the name from pedagogical hour data
+const getPedagogicalHourName = (hour: PedagogicalHour): string => {
+  if (typeof hour.name === 'string') {
+    // Check if it's a JSON string
+    if (hour.name.startsWith('{') && hour.name.endsWith('}')) {
+      try {
+        // Parse the JSON string
+        const obj = JSON.parse(hour.name) as Record<string, string>;
+        const keys = Object.keys(obj).sort((a, b) => parseInt(a) - parseInt(b));
+        return keys.map(key => obj[key]).join('');
+      } catch (error) {
+        console.warn('Error parsing JSON string:', error);
+        return hour.name; // Return original string if parsing fails
+      }
+    }
+    // If it's a regular string, return it
+    return hour.name;
+  }
+  
+  // If it's an object (JSON), try to reconstruct the text
+  if (typeof hour.name === 'object' && hour.name !== null) {
+    try {
+      // Convert object with numeric keys to string
+      const obj = hour.name as Record<string, string>;
+      const keys = Object.keys(obj).sort((a, b) => parseInt(a) - parseInt(b));
+      return keys.map(key => obj[key]).join('');
+    } catch (error) {
+      console.warn('Error processing pedagogical hour name:', error);
+      return 'Hora Pedagógica';
+    }
+  }
+  
+  return 'Hora Pedagógica';
+};
+
 const getOrdinalSuffix = (n: number) => {
     const s = ['ta', 'ra', 'da', 'ra', 'ta', 'ta', 'ta', 'va', 'na', 'ma'];
     if (n % 100 >= 11 && n % 100 <= 13) {
@@ -35,7 +70,8 @@ export function PedagogicalHoursTab() {
   const { toast } = useToast();
 
   const handleAddNew = async () => {
-    const nextNumber = (pedagogicalHours.length > 0 ? Math.max(...pedagogicalHours.map(h => parseInt(h.name) || 0)) : 0) + 1;
+    // Calculate the next sequential number based on existing hours count
+    const nextNumber = pedagogicalHours.length + 1;
     const suffix = getOrdinalSuffix(nextNumber);
     const newName = `${nextNumber}${suffix} Hora`;
     
@@ -58,7 +94,7 @@ export function PedagogicalHoursTab() {
         await deletePedagogicalHour(hourToDelete.id);
         toast({
             title: 'Bloque Eliminado',
-            description: `El bloque "${hourToDelete.name}" ha sido eliminado.`,
+            description: `El bloque "${getPedagogicalHourName(hourToDelete)}" ha sido eliminado.`,
             variant: 'destructive',
         });
     } catch (error: any) {
@@ -89,7 +125,7 @@ export function PedagogicalHoursTab() {
             <div className="space-y-0">
               {pedagogicalHours.map((hour) => (
                 <div key={hour.id} className="flex items-center gap-2 p-2 border-b last:border-b-0 hover:bg-muted/50">
-                  <p className="flex-grow px-3 font-medium text-sm sm:text-base">{hour.name}</p>
+                  <p className="flex-grow px-3 font-medium text-sm sm:text-base">{getPedagogicalHourName(hour)}</p>
                   <Button type="button" variant="ghost" size="icon" className="text-destructive hover:text-destructive shrink-0" onClick={() => handleDeleteClick(hour)}>
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -111,7 +147,7 @@ export function PedagogicalHoursTab() {
             <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
             <AlertDialogDescription>
               Esta acción no se puede deshacer. Se eliminará permanentemente el bloque 
-              <strong> {hourToDelete?.name}</strong>.
+              <strong> {hourToDelete ? getPedagogicalHourName(hourToDelete) : ''}</strong>.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
