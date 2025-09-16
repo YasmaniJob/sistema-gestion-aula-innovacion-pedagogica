@@ -1,15 +1,32 @@
 
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { usePageTitle } from '@/hooks/use-page-title';
 import { useData } from '@/context/data-provider-refactored';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { CalendarDays, Users, BookOpen, Clock, Package, ArrowRight, CheckCircle, AlertCircle } from 'lucide-react';
+import { CalendarDays, Users, BookOpen, Clock, Package, ArrowRight, CheckCircle, AlertCircle, AlertTriangle } from 'lucide-react';
+import { logDashboardDiagnostics } from '@/utils/dashboard-diagnostics';
+import DataSyncDiagnostics from '@/components/dashboard/data-sync-diagnostics';
+import SyncStatusMonitor from '@/components/dashboard/sync-status-monitor';
 
 export default function DashboardPage() {
   usePageTitle('Dashboard');
-  const { users, resources, loans, meetings, isLoadingData } = useData();
+  const { users, resources, loans, reservations, meetings, isLoadingData, refreshAllData, refreshResources, refreshLoans, refreshReservations } = useData();
+
+  // Diagnóstico de datos para debugging
+  useEffect(() => {
+    if (!isLoadingData) {
+      logDashboardDiagnostics({
+        users,
+        resources,
+        loans,
+        reservations,
+        meetings,
+        isLoadingData
+      });
+    }
+  }, [users, resources, loans, reservations, meetings, isLoadingData]);
 
   const stats = useMemo(() => {
     const availableResources = resources.filter(r => r.status === 'available').length;
@@ -55,11 +72,30 @@ export default function DashboardPage() {
     );
   }
 
+
+
   return (
     <div className="space-y-8 p-6">
       <div className="flex items-center justify-between">
         <h1 className="text-4xl font-bold text-gray-900">Dashboard del Administrador</h1>
       </div>
+      
+      {/* Monitor de Estado de Sincronización */}
+        <SyncStatusMonitor isLoadingData={isLoadingData} />
+        
+        {/* Diagnóstico de Sincronización */}
+        <DataSyncDiagnostics
+           users={users}
+           resources={resources}
+           loans={loans}
+           reservations={reservations}
+           meetings={meetings}
+           isLoadingData={isLoadingData}
+           onRefresh={refreshAllData}
+           refreshResources={refreshResources}
+           refreshLoans={refreshLoans}
+           refreshReservations={refreshReservations}
+         />
       
       {/* Main Stats Grid */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">

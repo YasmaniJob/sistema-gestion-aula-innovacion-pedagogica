@@ -65,6 +65,7 @@ interface DataContextType {
   updateResourceStatus: (resourceId: string, status: Resource['status'], notes?: string) => Promise<void>;
   refreshResources: () => Promise<void>;
   refreshLoans: () => Promise<void>;
+  refreshAllData: () => Promise<void>;
   addCategories: (categoryNames: string[]) => Promise<Category[] | null>;
   deleteCategory: (categoryName: string) => Promise<void>;
 
@@ -710,6 +711,103 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  // Función para refrescar todos los datos
+  const refreshAllData = useCallback(async () => {
+    hasLoadedDataRef.current = false;
+    setIsLoadingData(true);
+    
+    try {
+      console.log('Refreshing all data...');
+      
+      const [fetchedUsers, fetchedResources, fetchedCategories, fetchedLoans, fetchedReservations, fetchedMeetings, fetchedAreas, fetchedGrades, fetchedHours] = await Promise.allSettled([
+        getUsers(),
+        resourceService.getResources(),
+        resourceService.getCategories(),
+        loanService.getLoans(),
+        reservationService.getReservations(),
+        meetingService.getMeetings(),
+        areaService.getAreas(),
+        gradeService.getGradesAndSections().catch(err => {
+          console.warn('Grades service failed, using empty array:', err);
+          return [];
+        }),
+        pedagogicalHourService.getPedagogicalHours().catch(err => {
+          console.warn('Pedagogical hours service failed, using empty array:', err);
+          return [];
+        }),
+      ]);
+      
+      // Procesar resultados
+      const users = fetchedUsers.status === 'fulfilled' ? fetchedUsers.value || [] : [];
+      const resources = fetchedResources.status === 'fulfilled' ? fetchedResources.value || [] : [];
+      const categories = fetchedCategories.status === 'fulfilled' ? fetchedCategories.value || [] : [];
+      const loans = fetchedLoans.status === 'fulfilled' ? fetchedLoans.value || [] : [];
+      const reservations = fetchedReservations.status === 'fulfilled' ? fetchedReservations.value || [] : [];
+      const meetings = fetchedMeetings.status === 'fulfilled' ? fetchedMeetings.value || [] : [];
+      const areas = fetchedAreas.status === 'fulfilled' ? fetchedAreas.value || [] : [];
+      const grades = fetchedGrades.status === 'fulfilled' ? fetchedGrades.value || [] : [];
+      const hours = fetchedHours.status === 'fulfilled' ? fetchedHours.value || [] : [];
+      
+      // Establecer usuarios primero
+      setUsers(users);
+      
+      // Mapear datos que dependen de usuarios
+      const userMap = new Map(users.map(u => [u.id, u]));
+      
+      // Función para validar fechas
+      const isValidDate = (d: any): d is Date => d instanceof Date && !isNaN(d.getTime());
+      
+      // Convertir fechas de strings a objetos Date para loans
+      const processedLoans = loans.map(l => {
+        const loanDate = new Date(l.loanDate);
+        const returnDate = l.returnDate ? new Date(l.returnDate) : undefined;
+        return {
+          ...l,
+          loanDate: isValidDate(loanDate) ? loanDate : new Date(),
+          returnDate: returnDate && isValidDate(returnDate) ? returnDate : undefined,
+          user: userMap.get(l.user_id) || { id: l.user_id, name: 'Usuario Desconocido', role: 'Docente' }
+        };
+      });
+      
+      // Convertir fechas de strings a objetos Date para reservations
+      const processedReservations = reservations.map(r => {
+        const startTime = new Date(r.startTime);
+        const endTime = r.endTime ? new Date(r.endTime) : undefined;
+        
+        let user = r.user;
+        if (!user || !user.id) {
+          user = userMap.get(r.user_id) || { 
+            id: r.user_id || 'unknown', 
+            name: 'Usuario Desconocido', 
+            role: 'Docente' as const 
+          };
+        }
+        
+        return {
+          ...r,
+          startTime: isValidDate(startTime) ? startTime : new Date(),
+          endTime: endTime && isValidDate(endTime) ? endTime : undefined,
+          user: user
+        };
+      });
+      
+      setLoans(processedLoans as Loan[]);
+      setReservations(processedReservations as Reservation[]);
+      setCategories(categories);
+      setMeetings(meetings.map(m => ({ ...m, date: new Date(m.date) })));
+      setResources(resources);
+      setAreas(areas);
+      setGrades(grades);
+      setPedagogicalHours(hours);
+      
+      console.log('All data refreshed successfully');
+    } catch (error) {
+      console.error('Error refreshing all data:', error);
+    } finally {
+      setIsLoadingData(false);
+    }
+  }, []);
+
   // Valor del contexto memoizado
   const value: DataContextType = useMemo(() => ({
     users,
@@ -742,6 +840,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     updateResourceStatus,
     refreshResources,
     refreshLoans,
+    refreshAllData,
     addCategories,
     deleteCategory,
     addReservation,
@@ -762,7 +861,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     users, resources, categories, loans, reservations, meetings, grades, areas, pedagogicalHours,
     currentUser, isLoadingData, appSettings, updateAppSettings, signOut, findUserById, addUser, registerUser, updateUser,
     deleteUser, addMultipleUsers, addLoan, approveLoan, rejectLoan, processReturn, addResource,
-    updateResource, deleteResource, updateResourceStatus, refreshResources, refreshLoans,
+    updateResource, deleteResource, updateResourceStatus, refreshResources, refreshLoans, refreshAllData,
     addCategories, deleteCategory, addReservation, updateReservationStatus, refreshReservations,
     addMeeting, toggleMeetingTaskStatus, addAreas, updateArea, deleteArea, addGrade, deleteGrade,
     addSection, deleteSection, addPedagogicalHour, deletePedagogicalHour
