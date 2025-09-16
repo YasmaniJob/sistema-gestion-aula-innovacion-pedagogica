@@ -16,6 +16,7 @@ import {
   Clock,
   Paintbrush,
   Shield,
+  Activity,
 } from 'lucide-react';
 
 export const adminNavItems = [
@@ -37,6 +38,7 @@ export const adminNavItems = [
       { href: '/settings?tab=hours', icon: Clock, label: 'Horas Pedagógicas' },
       { href: '/settings?tab=customization', icon: Paintbrush, label: 'Personalización' },
       { href: '/settings?tab=security', icon: Shield, label: 'Seguridad' },
+      { href: '/sync-monitor', icon: Activity, label: 'Monitor de Sincronización' },
     ],
   },
 ];

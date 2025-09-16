@@ -7,8 +7,7 @@ import { useData } from '@/context/data-provider-refactored';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { CalendarDays, Users, BookOpen, Clock, Package, ArrowRight, CheckCircle, AlertCircle, AlertTriangle } from 'lucide-react';
 import { logDashboardDiagnostics } from '@/utils/dashboard-diagnostics';
-import DataSyncDiagnostics from '@/components/dashboard/data-sync-diagnostics';
-import SyncStatusMonitor from '@/components/dashboard/sync-status-monitor';
+import { Button } from '@/components/ui/button';
 
 export default function DashboardPage() {
   usePageTitle('Dashboard');
@@ -34,7 +33,10 @@ export default function DashboardPage() {
     const expiredLoans = loans.filter(l => l.status === 'expired').length;
     const maintenanceResources = resources.filter(r => r.status === 'maintenance').length;
     const today = new Date().toDateString();
-    const todayReservations = 3; // Placeholder - ajustar según datos reales
+    const todayReservations = reservations.filter(r => {
+      const reservationDate = new Date(r.startTime).toDateString();
+      return reservationDate === today;
+    }).length;
     const pendingTasks = meetings.reduce((acc, meeting) => {
       return acc + meeting.tasks.filter(task => task.status === 'pending').length;
     }, 0);
@@ -80,22 +82,29 @@ export default function DashboardPage() {
         <h1 className="text-4xl font-bold text-gray-900">Dashboard del Administrador</h1>
       </div>
       
-      {/* Monitor de Estado de Sincronización */}
-        <SyncStatusMonitor isLoadingData={isLoadingData} />
-        
-        {/* Diagnóstico de Sincronización */}
-        <DataSyncDiagnostics
-           users={users}
-           resources={resources}
-           loans={loans}
-           reservations={reservations}
-           meetings={meetings}
-           isLoadingData={isLoadingData}
-           onRefresh={refreshAllData}
-           refreshResources={refreshResources}
-           refreshLoans={refreshLoans}
-           refreshReservations={refreshReservations}
-         />
+      {/* Monitor de Sincronización - Enlace a página dedicada */}
+      <Card className="border-blue-200 bg-blue-50">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <CheckCircle className="h-6 w-6 text-blue-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-blue-900">Monitor de Sincronización</h3>
+                <p className="text-sm text-blue-700">Verifica el estado de sincronización y diagnostica problemas del sistema</p>
+              </div>
+            </div>
+            <Button 
+              onClick={() => window.location.href = '/sync-monitor'}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              <ArrowRight className="h-4 w-4 mr-2" />
+              Ver Monitor
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
       
       {/* Main Stats Grid */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
