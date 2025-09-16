@@ -1,13 +1,13 @@
-# AIP - Sistema de Gestión Académica
+# AIP - Sistema para Gestionar el Aula de Innovación Pedagógica
 
-Sistema integral de gestión académica desarrollado con Next.js 15, TypeScript y Supabase.
+Sistema integral para gestionar el aula de innovación pedagógica desarrollado con Next.js 15, TypeScript y Supabase.
 
 ## 🚀 Características
 
-- **Gestión de Usuarios**: Sistema completo de autenticación y roles
-- **Reservas**: Sistema de reservas de recursos académicos
-- **Préstamos**: Gestión de préstamos de materiales
-- **Reuniones**: Programación y gestión de reuniones
+- **Gestión de Usuarios**: Sistema completo de autenticación y roles para el aula de innovación
+- **Reservas**: Sistema de reservas del aula de innovación pedagógica
+- **Préstamos**: Gestión de préstamos de equipos tecnológicos y materiales pedagógicos
+- **Reuniones**: Programación y gestión de sesiones de innovación pedagógica
 - **Personalización**: Configuración personalizable de la aplicación
 - **Tiempo Real**: Actualizaciones en tiempo real con Supabase
 - **Responsive**: Diseño adaptable a todos los dispositivos
@@ -174,4 +174,4 @@ Si tienes problemas o preguntas:
 
 ---
 
-**Desarrollado con ❤️ para la gestión académica moderna**
+**Desarrollado con ❤️ para la gestión moderna del aula de innovación pedagógica**
