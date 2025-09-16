@@ -6,8 +6,19 @@ import { AppProvider } from './app-provider';
 import { AuthProvider } from '@/context/auth-provider';
 import { DataProvider } from '@/context/data-provider-refactored';
 import { SessionProvider } from '@/components/providers/session-provider';
+import type { Metadata } from 'next';
 
 const inter = Inter({ subsets: ['latin'] });
+
+export const metadata: Metadata = {
+  title: 'AIP - Sistema para Gestionar el Aula de Innovación Pedagógica',
+  description: 'Sistema integral para la gestión del aula de innovación pedagógica - Gestión de usuarios, reservas, préstamos y reuniones',
+  icons: {
+    icon: '/favicon.svg',
+    shortcut: '/favicon.svg',
+    apple: '/favicon.svg',
+  },
+};
 
 export default function RootLayout({
   children,
