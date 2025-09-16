@@ -1,0 +1,154 @@
+
+
+'use server';
+
+import type { Reservation, LoanUser } from '@/domain/types';
+import { supabase } from '@/infrastructure/supabase/client';
+import { getUsers } from './user.service';
+
+/**
+ * Fetches all reservations and maps user data.
+ * @returns A promise that resolves to an array of reservations.
+ */
+export async function getReservations(): Promise<any[]> {
+    const { data, error } = await supabase
+        .from('reservations')
+        .select(`
+            *,
+            users!reservations_user_id_fkey(*)
+        `)
+        .order('start_time', { ascending: false });
+
+    if (error) {
+        console.error('Error fetching reservations:', error);
+        return [];
+    }
+
+    return data.map(r => {
+        // Asegurar que siempre haya un objeto user válido
+        const user = r.users || { 
+            id: r.user_id || 'unknown', 
+            name: 'Usuario Desconocido', 
+            role: 'Docente' as const 
+        };
+        
+        return {
+            id: r.id,
+            user_id: r.user_id,
+            user: user,
+            purpose: r.purpose,
+            purposeDetails: r.purpose_details || {},
+            startTime: new Date(r.start_time),
+            endTime: new Date(r.end_time),
+            status: r.status,
+        }
+    });
+}
+
+
+/**
+ * Creates a new reservation in the database.
+ * @param newReservationData - The data for the new reservation, without an ID.
+ * @returns The newly created reservation or null on error.
+ */
+export async function addReservation(
+    newReservationData: Omit<Reservation, 'id'>
+): Promise<Reservation | null> {
+    // Preparar datos para inserción
+    const insertData: any = {
+        user_id: newReservationData.user.id,
+        purpose: newReservationData.purpose,
+        start_time: newReservationData.startTime.toISOString(),
+        end_time: newReservationData.endTime.toISOString(),
+        status: newReservationData.status,
+    };
+    
+    // Agregar purpose_details solo si existe y no está vacío
+    if (newReservationData.purposeDetails && Object.keys(newReservationData.purposeDetails).length > 0) {
+        insertData.purpose_details = newReservationData.purposeDetails;
+    }
+    
+    const { data, error } = await supabase
+        .from('reservations')
+        .insert([insertData])
+        .select()
+        .single();
+    
+    if (error) {
+        console.error('Error adding reservation:', error);
+        return null;
+    }
+    
+    return {
+        ...newReservationData,
+        id: data.id,
+    };
+}
+
+
+/**
+ * Updates the status of a reservation.
+ * @param reservationId - The ID of the reservation to update.
+ * @param status - The new status for the reservation.
+ * @returns The updated reservation or null on error.
+ */
+export async function updateReservationStatus(
+  reservationId: string,
+  status: Reservation['status']
+): Promise<Reservation | null> {
+    const { data: reservation, error: fetchError } = await supabase
+        .from('reservations')
+        .select('*, user:users!reservations_user_id_fkey(*)')
+        .eq('id', reservationId)
+        .single();
+    
+    if(fetchError || !reservation) {
+        console.error('Error fetching reservation to update:', fetchError);
+        return null;
+    }
+
+    const { data, error } = await supabase
+        .from('reservations')
+        .update({ status })
+        .eq('id', reservationId)
+        .select()
+        .single();
+
+    if (error) {
+        console.error('Error updating reservation status:', error);
+        return null;
+    }
+
+    // Asegurar que siempre haya un objeto user válido
+    const user = reservation.users || { 
+        id: reservation.user_id || 'unknown', 
+        name: 'Usuario Desconocido', 
+        role: 'Docente' as const 
+    };
+
+    return {
+        ...data,
+        user: user,
+        startTime: new Date(data.start_time),
+        endTime: new Date(data.end_time),
+    } as Reservation;
+}
+
+/**
+ * Deletes a reservation from the database.
+ * @param reservationId - The ID of the reservation to delete.
+ * @returns A boolean indicating success or failure.
+ */
+export async function deleteReservation(reservationId: string): Promise<boolean> {
+    const { error } = await supabase
+        .from('reservations')
+        .delete()
+        .eq('id', reservationId);
+
+    if (error) {
+        console.error('Error deleting reservation:', error);
+        return false;
+    }
+
+    return true;
+}
