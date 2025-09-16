@@ -317,3 +317,5 @@ export function DataSyncDiagnostics({
     </Card>
   );
 }
+
+export default DataSyncDiagnostics;
