@@ -11,38 +11,53 @@ import { getUsers } from './user.service';
  * @returns A promise that resolves to an array of reservations.
  */
 export async function getReservations(): Promise<any[]> {
-    const { data, error } = await supabase
-        .from('reservations')
-        .select(`
-            *,
-            users!reservations_user_id_fkey(*)
-        `)
-        .order('start_time', { ascending: false });
+    try {
+        // Optimizar consulta con límite y rango de fechas
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        
+        const { data, error } = await supabase
+            .from('reservations')
+            .select(`
+                *,
+                users!reservations_user_id_fkey(*)
+            `)
+            .gte('start_time', thirtyDaysAgo.toISOString())
+            .order('start_time', { ascending: false })
+            .limit(500); // Limitar resultados para evitar sobrecarga
 
-    if (error) {
-        console.error('Error fetching reservations:', error);
+        if (error) {
+            console.error('Error fetching reservations:', error);
+            return [];
+        }
+
+        if (!data) {
+            return [];
+        }
+
+        return data.map(r => {
+            // Asegurar que siempre haya un objeto user válido
+            const user = r.users || { 
+                id: r.user_id || 'unknown', 
+                name: 'Usuario Desconocido', 
+                role: 'Docente' as const 
+            };
+            
+            return {
+                id: r.id,
+                user_id: r.user_id,
+                user: user,
+                purpose: r.purpose,
+                purposeDetails: r.purpose_details || {},
+                startTime: new Date(r.start_time),
+                endTime: new Date(r.end_time),
+                status: r.status,
+            }
+        });
+    } catch (error) {
+        console.error('Unexpected error in getReservations:', error);
         return [];
     }
-
-    return data.map(r => {
-        // Asegurar que siempre haya un objeto user válido
-        const user = r.users || { 
-            id: r.user_id || 'unknown', 
-            name: 'Usuario Desconocido', 
-            role: 'Docente' as const 
-        };
-        
-        return {
-            id: r.id,
-            user_id: r.user_id,
-            user: user,
-            purpose: r.purpose,
-            purposeDetails: r.purpose_details || {},
-            startTime: new Date(r.start_time),
-            endTime: new Date(r.end_time),
-            status: r.status,
-        }
-    });
 }
 
 

@@ -182,6 +182,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }, delay);
   }, []);
 
+
+
   // Cargar configuración de la aplicación (solo una vez)
   useEffect(() => {
     let isMounted = true;
@@ -514,18 +516,21 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     const fetchedLoans = await loanService.getLoans();
     
     if (fetchedLoans && fetchedLoans.length > 0) {
-      const loansWithUsers = fetchedLoans.map(loan => {
-        const user = users.find(u => u.id === loan.user_id);
-        return {
-          ...loan,
-          user: user || { id: loan.user_id, name: 'Usuario desconocido', email: '', role: 'Docente' as const },
-        };
+      setLoans(prevLoans => {
+        const currentUsers = users; // Capturar el valor actual
+        const loansWithUsers = fetchedLoans.map(loan => {
+          const user = currentUsers.find(u => u.id === loan.user_id);
+          return {
+            ...loan,
+            user: user || { id: loan.user_id, name: 'Usuario desconocido', email: '', role: 'Docente' as const },
+          };
+        });
+        return loansWithUsers as Loan[];
       });
-      setLoans(loansWithUsers as Loan[]);
     } else {
       setLoans([]);
     }
-  }, [users]);
+  }, []);
   
   const addCategories = useCallback(async (categoryNames: string[]): Promise<Category[] | null> => {
     try {
@@ -552,12 +557,16 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     try {
       const fetchedReservations = await reservationService.getReservations();
       if (fetchedReservations) {
-        const userMap = new Map(users.map(u => [u.id, u]));
-        const reservationsWithUsers = fetchedReservations.map(r => ({ 
-          ...r, 
-          user: userMap.get(r.user_id) || { id: r.user_id, name: 'Usuario Desconocido', role: 'Docente' } 
-        } as Reservation));
-        setReservations(reservationsWithUsers);
+        // Usar el estado actual de users sin crear dependencia
+        setReservations(prevReservations => {
+          const currentUsers = users; // Capturar el valor actual
+          const userMap = new Map(currentUsers.map(u => [u.id, u]));
+          const reservationsWithUsers = fetchedReservations.map(r => ({ 
+            ...r, 
+            user: userMap.get(r.user_id) || { id: r.user_id, name: 'Usuario Desconocido', role: 'Docente' } 
+          } as Reservation));
+          return reservationsWithUsers;
+        });
       }
     } catch (error) {
       console.error('Error in refreshReservations:', error);
@@ -567,34 +576,55 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         variant: "destructive"
       });
     }
-  }, [users, toast]);
+  }, [toast]);
+
+  // Debounce para operaciones de reservas
+  const debouncedReservationOperations = useMemo(() => {
+    let refreshTimeoutId: NodeJS.Timeout | null = null;
+    
+    return {
+      debouncedRefreshReservations: () => {
+        if (refreshTimeoutId) {
+          clearTimeout(refreshTimeoutId);
+        }
+        refreshTimeoutId = setTimeout(() => {
+          refreshReservations();
+        }, 300);
+      }
+    };
+  }, [refreshReservations]);
+
+  const { debouncedRefreshReservations } = debouncedReservationOperations;
 
   const addReservation = useCallback(async (newReservationData: Omit<Reservation, 'id'>) => {
     try {
       const newReservation = await reservationService.addReservation(newReservationData);
       if (newReservation) {
         // Asegurar que la nueva reserva tenga un objeto user válido
-        let user = newReservation.user;
-        if (!user || !user.id) {
-          const userMap = new Map(users.map(u => [u.id, u]));
-          user = userMap.get(newReservation.user_id) || { 
-            id: newReservation.user_id || 'unknown', 
-            name: 'Usuario Desconocido', 
-            role: 'Docente' as const 
-          };
-        }
-        
-        const reservationWithUser = {
-          ...newReservation,
-          user: user
-        } as Reservation;
-        setReservations(prev => [reservationWithUser, ...prev]);
+        setReservations(prev => {
+          let user = newReservation.user;
+          if (!user || !user.id) {
+            const currentUsers = users; // Capturar el valor actual
+            const userMap = new Map(currentUsers.map(u => [u.id, u]));
+            user = userMap.get(newReservation.user_id) || { 
+              id: newReservation.user_id || 'unknown', 
+              name: 'Usuario Desconocido', 
+              role: 'Docente' as const 
+            };
+          }
+          
+          const reservationWithUser = {
+            ...newReservation,
+            user: user
+          } as Reservation;
+          return [reservationWithUser, ...prev];
+        });
       }
     } catch (error) {
       console.error('Error adding reservation:', error);
       throw error;
     }
-  }, [users]);
+  }, []);
 
   const updateReservationStatus = useCallback(async (reservationId: string, status: Reservation['status']) => {
     // Optimistic update
@@ -808,7 +838,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // Valor del contexto memoizado
+  // Valor del contexto memoizado con dependencias optimizadas
   const value: DataContextType = useMemo(() => ({
     users,
     resources,
@@ -845,6 +875,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     deleteCategory,
     addReservation,
     updateReservationStatus,
+    debouncedRefreshReservations,
     refreshReservations,
     addMeeting,
     toggleMeetingTaskStatus,
@@ -862,7 +893,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     currentUser, isLoadingData, appSettings, updateAppSettings, signOut, findUserById, addUser, registerUser, updateUser,
     deleteUser, addMultipleUsers, addLoan, approveLoan, rejectLoan, processReturn, addResource,
     updateResource, deleteResource, updateResourceStatus, refreshResources, refreshLoans, refreshAllData,
-    addCategories, deleteCategory, addReservation, updateReservationStatus, refreshReservations,
+    addCategories, deleteCategory, addReservation, updateReservationStatus, debouncedRefreshReservations, refreshReservations,
     addMeeting, toggleMeetingTaskStatus, addAreas, updateArea, deleteArea, addGrade, deleteGrade,
     addSection, deleteSection, addPedagogicalHour, deletePedagogicalHour
   ]);

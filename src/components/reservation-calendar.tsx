@@ -159,7 +159,7 @@ export function ReservationCalendar({
     currentDate: externalCurrentDate,
     onDateChange: externalOnDateChange,
 }: ReservationCalendarProps) {
-  const { currentUser, pedagogicalHours } = useData();
+  const { currentUser, pedagogicalHours, isLoadingData } = useData();
   const timeSlots = useMemo(() => pedagogicalHours.map(h => getPedagogicalHourName(h)), [pedagogicalHours]);
   const [internalCurrentDate, setInternalCurrentDate] = useState(new Date());
 
@@ -170,7 +170,10 @@ export function ReservationCalendar({
   const [isCalendarOpen, setCalendarOpen] = useState(false);
   const isMobile = useIsMobile();
   const [isClient, setIsClient] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const { toast } = useToast();
   
   // Use stable modal hook for reservation dialog
   const reservationModal = useStableDataModal<Reservation>({
@@ -256,14 +259,27 @@ export function ReservationCalendar({
   }, [mode, reservationModal, currentUser?.role, router, onSlotToggle]);
 
   const handleUpdateStatus = useCallback(async (reservationId: string, status: ReservationStatus) => {
+    if (!onUpdateReservationStatus) return;
+    
+    setIsLoading(true);
+    setError(null);
+    
     try {
       await onUpdateReservationStatus(reservationId, status);
       reservationModal.closeModal();
-    } catch (error) {
-      console.error('Error updating reservation status:', error);
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Error al actualizar el estado de la reserva';
+      setError(errorMessage);
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive"
+      });
       // Keep modal open on error
+    } finally {
+      setIsLoading(false);
     }
-  }, [onUpdateReservationStatus, reservationModal]);
+  }, [onUpdateReservationStatus, reservationModal, toast]);
   
   const weekRangeText = `Semana del ${format(weekStart, 'd')} al ${format(weekEnd, "d 'de' MMMM, yyyy", { locale: es })}`;
   
