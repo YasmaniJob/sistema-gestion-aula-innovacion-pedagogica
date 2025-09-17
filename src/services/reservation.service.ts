@@ -55,13 +55,29 @@ export async function addReservation(
     newReservationData: Omit<Reservation, 'id'>
 ): Promise<Reservation | null> {
     // Preparar datos para inserción
+    // Asegurar que las fechas sean objetos Date válidos
+    const startTime = newReservationData.startTime instanceof Date ? newReservationData.startTime : new Date(newReservationData.startTime);
+    const endTime = newReservationData.endTime instanceof Date ? newReservationData.endTime : new Date(newReservationData.endTime);
+    
     const insertData: any = {
-        user_id: newReservationData.user.id,
+        user_id: newReservationData.user?.id || newReservationData.user_id,
         purpose: newReservationData.purpose,
-        start_time: newReservationData.startTime.toISOString(),
-        end_time: newReservationData.endTime.toISOString(),
+        start_time: startTime.toISOString(),
+        end_time: endTime.toISOString(),
         status: newReservationData.status,
     };
+    
+    // Validar que tenemos un user_id válido
+    if (!insertData.user_id) {
+        console.error('Error: No user ID provided for reservation');
+        return null;
+    }
+    
+    // Validar que las fechas sean válidas
+    if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) {
+        console.error('Error: Invalid date provided for reservation');
+        return null;
+    }
     
     // Agregar purpose_details solo si existe y no está vacío
     if (newReservationData.purposeDetails && Object.keys(newReservationData.purposeDetails).length > 0) {

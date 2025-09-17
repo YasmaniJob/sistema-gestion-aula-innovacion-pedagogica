@@ -17,7 +17,7 @@ import { DocentesTable } from '@/components/docentes/docentes-table';
 import { UserForm, UserFormData } from '@/components/user-form';
 import { UserImportDialog } from '@/components/user-import-dialog';
 import { ExportDialog } from '@/components/export-dialog';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { DeleteConfirmationDialog } from '@/components/delete-confirmation-dialog';
 import { AdaptiveDialog } from '@/components/adaptive-dialog';
 import { Card, CardContent } from '@/components/ui/card';
 import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
@@ -270,25 +270,13 @@ export default function DocentesPage() {
         itemName="Personal"
       />
 
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-          <AlertDialogContent>
-              <AlertDialogHeader>
-                  <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                      Esta acción no se puede deshacer. Se eliminará permanentemente al usuario <strong>{userToDelete?.name}</strong> del sistema.
-                  </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction
-                      onClick={confirmDelete}
-                      className="bg-destructive hover:bg-destructive/90"
-                  >
-                      Sí, eliminar
-                  </AlertDialogAction>
-              </AlertDialogFooter>
-          </AlertDialogContent>
-      </AlertDialog>
+      <DeleteConfirmationDialog
+        isOpen={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        onConfirm={confirmDelete}
+        title="¿Estás seguro?"
+        description={`Esta acción no se puede deshacer. Se eliminará permanentemente al usuario ${userToDelete?.name} del sistema.`}
+      />
     </>
   );
 }

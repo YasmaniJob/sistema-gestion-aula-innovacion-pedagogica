@@ -35,13 +35,14 @@ import { MaintenanceDialog } from '@/components/maintenance-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { usePageTitle } from '@/hooks/use-page-title';
 import { cn } from '@/lib/utils';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { DeleteConfirmationDialog } from '@/components/delete-confirmation-dialog';
+import { EditResourceNumberDialog } from '@/components/edit-resource-number-dialog';
 
 
 export default function CategoryPage() {
   const params = useParams();
   const router = useRouter();
-  const { resources, updateResourceStatus, deleteResource } = useData();
+  const { resources, updateResourceStatus, deleteResource, updateResource } = useData();
   const { toast } = useToast();
 
   const categoryName = decodeURIComponent(params.categoryName as string);
@@ -52,6 +53,9 @@ export default function CategoryPage() {
   
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [resourceToDelete, setResourceToDelete] = useState<Resource | null>(null);
+  
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [resourceToEdit, setResourceToEdit] = useState<Resource | null>(null);
 
   const [loanDetailsResource, setLoanDetailsResource] = useState<Resource | null>(null);
   const [damagedResource, setDamagedResource] = useState<Resource | null>(null);
@@ -126,6 +130,13 @@ export default function CategoryPage() {
       setIsDeleteDialogOpen(true);
     }
     
+    const handleEditClick = (e: React.MouseEvent, resource: Resource) => {
+      e.stopPropagation();
+      e.preventDefault();
+      setResourceToEdit(resource);
+      setIsEditDialogOpen(true);
+    }
+    
     const confirmDelete = () => {
       if (!resourceToDelete) return;
       deleteResource(resourceToDelete.id);
@@ -136,6 +147,16 @@ export default function CategoryPage() {
       });
       setIsDeleteDialogOpen(false);
       setResourceToDelete(null);
+    };
+    
+    const handleSaveResourceNumber = async (resourceId: string, newName: string) => {
+      await updateResource(resourceId, { name: newName });
+      toast({
+        title: "Numeración actualizada",
+        description: "La numeración del recurso ha sido actualizada exitosamente.",
+      });
+      setIsEditDialogOpen(false);
+      setResourceToEdit(null);
     };
 
 
@@ -228,7 +249,13 @@ export default function CategoryPage() {
 
       <div className="grid grid-cols-2 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
         {filteredResources.map((resource) => (
-          <ResourceCard key={resource.id} resource={resource} onClick={handleResourceClick} onDelete={(e) => handleDeleteClick(e, resource)} />
+          <ResourceCard 
+            key={resource.id} 
+            resource={resource} 
+            onClick={handleResourceClick} 
+            onDelete={(e) => handleDeleteClick(e, resource)}
+            onEdit={(e) => handleEditClick(e, resource)}
+          />
         ))}
       </div>
       
@@ -264,25 +291,21 @@ export default function CategoryPage() {
         onOpenChange={(isOpen) => !isOpen && setMaintenanceResource(null)}
     />
 
-    <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>¿Confirmar Dar de Baja?</AlertDialogTitle>
-          <AlertDialogDescription>
-            Esta acción es irreversible. El recurso <strong>{resourceToDelete?.name}</strong> será eliminado permanentemente del inventario.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-          <AlertDialogAction
-            onClick={confirmDelete}
-            className="bg-destructive hover:bg-destructive/90"
-          >
-            Sí, dar de baja
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <DeleteConfirmationDialog
+      isOpen={isDeleteDialogOpen}
+      onOpenChange={setIsDeleteDialogOpen}
+      onConfirm={confirmDelete}
+      title="¿Confirmar Dar de Baja?"
+      description={`Esta acción es irreversible. El recurso ${resourceToDelete?.name} será eliminado permanentemente del inventario.`}
+      confirmText="Sí, dar de baja"
+    />
+    
+    <EditResourceNumberDialog
+      isOpen={isEditDialogOpen}
+      onOpenChange={setIsEditDialogOpen}
+      resource={resourceToEdit}
+      onSave={handleSaveResourceNumber}
+    />
 
     </>
   );

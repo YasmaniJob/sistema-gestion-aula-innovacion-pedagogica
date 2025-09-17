@@ -77,27 +77,27 @@ export default function DashboardPage() {
 
 
   return (
-    <div className="space-y-8 p-6">
+    <div className="space-y-4 sm:space-y-8 p-3 sm:p-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-4xl font-bold text-gray-900">Dashboard del Administrador</h1>
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">Dashboard del Administrador</h1>
       </div>
       
       {/* Monitor de Sincronización - Enlace a página dedicada */}
       <Card className="border-blue-200 bg-blue-50">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between">
+        <CardContent className="p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-blue-100 rounded-lg">
-                <CheckCircle className="h-6 w-6 text-blue-600" />
+                <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-blue-900">Monitor de Sincronización</h3>
-                <p className="text-sm text-blue-700">Verifica el estado de sincronización y diagnostica problemas del sistema</p>
+                <h3 className="text-sm sm:text-base font-semibold text-blue-900">Monitor de Sincronización</h3>
+                <p className="text-xs sm:text-sm text-blue-700">Verifica el estado de sincronización y diagnostica problemas del sistema</p>
               </div>
             </div>
             <Button 
               onClick={() => window.location.href = '/sync-monitor'}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto text-sm"
             >
               <ArrowRight className="h-4 w-4 mr-2" />
               Ver Monitor
@@ -107,19 +107,19 @@ export default function DashboardPage() {
       </Card>
       
       {/* Main Stats Grid */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
+      <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2">
         {/* Inventario Card */}
         <Card 
           className="relative overflow-hidden bg-gradient-to-br from-blue-500 to-blue-600 border-0 text-white cursor-pointer hover:from-blue-600 hover:to-blue-700 transition-all duration-300 transform hover:scale-105"
           onClick={() => window.location.href = '/inventory'}
         >
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <Package className="h-8 w-8 text-white/80" />
-              <ArrowRight className="h-5 w-5 text-white/60" />
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <Package className="h-6 w-6 sm:h-8 sm:w-8 text-white/80" />
+              <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 text-white/60" />
             </div>
-            <h3 className="text-lg font-semibold mb-2">Inventario</h3>
-            <p className="text-sm text-white/80 mb-6">Resumen del estado de los recursos.</p>
+            <h3 className="text-base sm:text-lg font-semibold mb-2">Inventario</h3>
+            <p className="text-xs sm:text-sm text-white/80 mb-4 sm:mb-6">Resumen del estado de los recursos.</p>
             
             <div className="flex items-center justify-between mb-4">
               <div className="w-full bg-white/20 rounded-full h-2">
@@ -130,17 +130,17 @@ export default function DashboardPage() {
               </div>
             </div>
             
-            <div className="grid grid-cols-3 gap-4 text-center">
+            <div className="grid grid-cols-3 gap-2 sm:gap-4 text-center">
               <div>
-                <div className="text-2xl font-bold">{stats.availableResources}</div>
+                <div className="text-lg sm:text-2xl font-bold">{stats.availableResources}</div>
                 <div className="text-xs text-white/70">Disponible</div>
               </div>
               <div>
-                <div className="text-2xl font-bold">{stats.activeLoans}</div>
+                <div className="text-lg sm:text-2xl font-bold">{stats.activeLoans}</div>
                 <div className="text-xs text-white/70">En préstamo</div>
               </div>
               <div>
-                <div className="text-2xl font-bold">{stats.maintenanceResources}</div>
+                <div className="text-lg sm:text-2xl font-bold">{stats.maintenanceResources}</div>
                 <div className="text-xs text-white/70">Mantenimiento</div>
               </div>
             </div>
@@ -152,22 +152,22 @@ export default function DashboardPage() {
           className="relative overflow-hidden bg-gradient-to-br from-purple-500 to-purple-600 border-0 text-white cursor-pointer hover:from-purple-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-105"
           onClick={() => window.location.href = '/loans'}
         >
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <Clock className="h-8 w-8 text-white/80" />
-              <ArrowRight className="h-5 w-5 text-white/60" />
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <Clock className="h-6 w-6 sm:h-8 sm:w-8 text-white/80" />
+              <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 text-white/60" />
             </div>
-            <h3 className="text-lg font-semibold mb-2">Préstamos</h3>
-            <p className="text-sm text-white/80 mb-6">Seguimiento de préstamos activos y vencidos.</p>
+            <h3 className="text-base sm:text-lg font-semibold mb-2">Préstamos</h3>
+            <p className="text-xs sm:text-sm text-white/80 mb-4 sm:mb-6">Seguimiento de préstamos activos y vencidos.</p>
             
-            <div className="grid grid-cols-2 gap-8 text-center">
+            <div className="grid grid-cols-2 gap-4 sm:gap-8 text-center">
               <div>
-                <div className="text-4xl font-bold mb-1">{stats.activeLoans}</div>
-                <div className="text-sm text-white/70">Activos</div>
+                <div className="text-2xl sm:text-4xl font-bold mb-1">{stats.activeLoans}</div>
+                <div className="text-xs sm:text-sm text-white/70">Activos</div>
               </div>
               <div>
-                <div className="text-4xl font-bold mb-1">{stats.expiredLoans}</div>
-                <div className="text-sm text-white/70">Vencidos</div>
+                <div className="text-2xl sm:text-4xl font-bold mb-1">{stats.expiredLoans}</div>
+                <div className="text-xs sm:text-sm text-white/70">Vencidos</div>
               </div>
             </div>
           </CardContent>
@@ -178,17 +178,17 @@ export default function DashboardPage() {
           className="relative overflow-hidden bg-gradient-to-br from-green-500 to-green-600 border-0 text-white cursor-pointer hover:from-green-600 hover:to-green-700 transition-all duration-300 transform hover:scale-105"
           onClick={() => window.location.href = '/reservations'}
         >
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <CalendarDays className="h-8 w-8 text-white/80" />
-              <ArrowRight className="h-5 w-5 text-white/60" />
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <CalendarDays className="h-6 w-6 sm:h-8 sm:w-8 text-white/80" />
+              <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 text-white/60" />
             </div>
-            <h3 className="text-lg font-semibold mb-2">Reservas</h3>
-            <p className="text-sm text-white/80 mb-6">Reservas de aulas confirmadas para hoy.</p>
+            <h3 className="text-base sm:text-lg font-semibold mb-2">Reservas</h3>
+            <p className="text-xs sm:text-sm text-white/80 mb-4 sm:mb-6">Reservas de aulas confirmadas para hoy.</p>
             
             <div className="text-center">
-              <div className="text-6xl font-bold mb-2">{stats.todayReservations}</div>
-              <div className="text-sm text-white/70">Reservas Hoy</div>
+              <div className="text-4xl sm:text-6xl font-bold mb-2">{stats.todayReservations}</div>
+              <div className="text-xs sm:text-sm text-white/70">Reservas Hoy</div>
             </div>
           </CardContent>
         </Card>
@@ -198,22 +198,22 @@ export default function DashboardPage() {
           className="relative overflow-hidden bg-gradient-to-br from-orange-500 to-orange-600 border-0 text-white cursor-pointer hover:from-orange-600 hover:to-orange-700 transition-all duration-300 transform hover:scale-105"
           onClick={() => window.location.href = '/meetings'}
         >
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <Users className="h-8 w-8 text-white/80" />
-              <ArrowRight className="h-5 w-5 text-white/60" />
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <Users className="h-6 w-6 sm:h-8 sm:w-8 text-white/80" />
+              <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 text-white/60" />
             </div>
-            <h3 className="text-lg font-semibold mb-2">Reuniones y Acuerdos</h3>
-            <p className="text-sm text-white/80 mb-6">Seguimiento de reuniones y tareas pendientes.</p>
+            <h3 className="text-base sm:text-lg font-semibold mb-2">Reuniones y Acuerdos</h3>
+            <p className="text-xs sm:text-sm text-white/80 mb-4 sm:mb-6">Seguimiento de reuniones y tareas pendientes.</p>
             
-            <div className="grid grid-cols-2 gap-8 text-center">
+            <div className="grid grid-cols-2 gap-4 sm:gap-8 text-center">
               <div>
-                <div className="text-4xl font-bold mb-1">{meetings.length}</div>
-                <div className="text-sm text-white/70">Reuniones</div>
+                <div className="text-2xl sm:text-4xl font-bold mb-1">{meetings.length}</div>
+                <div className="text-xs sm:text-sm text-white/70">Reuniones</div>
               </div>
               <div>
-                <div className="text-4xl font-bold mb-1">{stats.pendingTasks}</div>
-                <div className="text-sm text-white/70">Tareas Pendientes</div>
+                <div className="text-2xl sm:text-4xl font-bold mb-1">{stats.pendingTasks}</div>
+                <div className="text-xs sm:text-sm text-white/70">Tareas Pendientes</div>
               </div>
             </div>
           </CardContent>

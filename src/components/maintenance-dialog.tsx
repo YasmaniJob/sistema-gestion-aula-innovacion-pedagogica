@@ -10,23 +10,20 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { DeleteConfirmationDialog } from './delete-confirmation-dialog';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import type { Resource } from '@/domain/types';
 import { Button } from './ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
-import { Megaphone, Trash2, Loader2, CheckCircle, XCircle } from 'lucide-react';
+import { Megaphone, Trash2, Loader2, CheckCircle, XCircle, MoreVertical } from 'lucide-react';
 import { Separator } from './ui/separator';
 
 type MaintenanceDialogProps = {
@@ -200,45 +197,36 @@ export function MaintenanceDialog({
             </Button>
         </DialogFooter>
         <Separator className="my-4" />
-         <Button 
-           variant="outline" 
-           className="w-full text-destructive border-destructive/50 hover:bg-destructive/10 hover:text-destructive" 
-           onClick={() => setDeleteConfirmationOpen(true)}
-           disabled={!!processingAction}
-         >
-            <Trash2 className="mr-2 h-4 w-4" />
-            Dar de Baja Permanente
-        </Button>
+        <div className="flex justify-end">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" disabled={!!processingAction}>
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem 
+                onClick={() => setDeleteConfirmationOpen(true)}
+                className="text-destructive focus:text-destructive"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Dar de Baja Permanente
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
         
       </DialogContent>
     </Dialog>
-     <AlertDialog open={isDeleteConfirmationOpen} onOpenChange={setDeleteConfirmationOpen}>
-        <AlertDialogContent>
-        <AlertDialogHeader>
-            <AlertDialogTitle>¿Confirmar Dar de Baja?</AlertDialogTitle>
-            <AlertDialogDescription>
-            Esta acción es irreversible. El recurso <strong>{resource.name}</strong> será eliminado permanentemente del inventario.
-            </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-            onClick={handleDelete}
-            className="bg-destructive hover:bg-destructive/90"
-            disabled={!!processingAction}
-            >
-            {processingAction === 'delete' ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Eliminando...
-              </>
-            ) : (
-              'Sí, dar de baja'
-            )}
-            </AlertDialogAction>
-        </AlertDialogFooter>
-        </AlertDialogContent>
-    </AlertDialog>
+     <DeleteConfirmationDialog
+        isOpen={isDeleteConfirmationOpen}
+        onOpenChange={setDeleteConfirmationOpen}
+        onConfirm={handleDelete}
+        title="¿Confirmar Dar de Baja?"
+        description={`Esta acción es irreversible. El recurso ${resource?.name} será eliminado permanentemente del inventario.`}
+        isLoading={processingAction === 'delete'}
+        confirmText="Sí, dar de baja"
+      />
     </>
   );
 }

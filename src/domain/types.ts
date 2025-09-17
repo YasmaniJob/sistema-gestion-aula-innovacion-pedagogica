@@ -67,6 +67,7 @@ export type ReservationStatus = 'Confirmada' | 'Realizada' | 'No asistió' | 'Ca
 export type Reservation = {
     id: string;
     user: LoanUser;
+    user_id?: string; // For compatibility with database operations
     purpose: 'aprendizaje' | 'institucional';
     purposeDetails?: {
         area?: string;

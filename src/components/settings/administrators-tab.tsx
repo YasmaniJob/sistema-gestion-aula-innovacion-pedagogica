@@ -16,7 +16,7 @@ import type { LoanUser } from '@/domain/types';
 import { UserForm, UserFormData } from '@/components/user-form';
 import { useToast } from '@/hooks/use-toast';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
+import { DeleteConfirmationDialog } from '../delete-confirmation-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { useData } from '@/context/data-provider-refactored';
 import { getInitials } from '@/lib/utils';
@@ -209,25 +209,13 @@ export function AdministratorsTab() {
       </CardContent>
     </Card>
 
-     <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent>
-            <AlertDialogHeader>
-                <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
-                <AlertDialogDescription>
-                    Esta acción no se puede deshacer. Se eliminará permanentemente al administrador <strong>{userToDelete?.name}</strong> del sistema.
-                </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction
-                    onClick={confirmDelete}
-                    className="bg-destructive hover:bg-destructive/90"
-                >
-                    Sí, eliminar
-                </AlertDialogAction>
-            </AlertDialogFooter>
-        </AlertDialogContent>
-    </AlertDialog>
+     <DeleteConfirmationDialog
+        isOpen={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        onConfirm={confirmDelete}
+        title="¿Estás seguro?"
+        description={`Esta acción no se puede deshacer. Se eliminará permanentemente al administrador ${userToDelete?.name} del sistema.`}
+      />
     </>
   );
 }

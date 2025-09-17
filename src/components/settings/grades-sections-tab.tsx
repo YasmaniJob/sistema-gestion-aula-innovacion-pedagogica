@@ -13,7 +13,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { PlusCircle, Trash2, BookUser, GraduationCap, MoreHorizontal, PenSquare } from 'lucide-react';
 import type { Grade, Section } from '@/domain/types';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
+import { DeleteConfirmationDialog } from '../delete-confirmation-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { GradeSectionForm, type GradeSectionFormData } from './grade-section-form';
@@ -230,23 +230,13 @@ export function GradesSectionsTab() {
       </div>
 
 
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta acción no se puede deshacer. Se eliminará permanentemente <strong>{(itemToDelete?.data as Grade)?.name || `la sección ${(itemToDelete?.data as Section)?.name}`}</strong> del sistema.
-              {itemToDelete?.type === 'grade' && ' Todas sus secciones también serán eliminadas.'}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">
-              Sí, eliminar
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteConfirmationDialog
+        isOpen={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        onConfirm={confirmDelete}
+        title="¿Estás seguro?"
+        description={`Esta acción no se puede deshacer. Se eliminará permanentemente ${(itemToDelete?.data as Grade)?.name || `la sección ${(itemToDelete?.data as Section)?.name}`} del sistema.${itemToDelete?.type === 'grade' ? ' Todas sus secciones también serán eliminadas.' : ''}`}
+      />
     </>
   );
 }

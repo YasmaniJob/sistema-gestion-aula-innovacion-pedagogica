@@ -11,21 +11,33 @@ import { Badge } from '@/components/ui/badge';
 import type { Resource } from '@/domain/types';
 import { cn } from '@/lib/utils';
 import { statusStyles } from '@/domain/constants';
-import { Camera, Trash2 } from 'lucide-react';
+import { Camera, Trash2, MoreVertical, Edit } from 'lucide-react';
 import { Button } from './ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 type ResourceCardProps = {
     resource: Resource;
     onClick: (resource: Resource) => void;
     onDelete: (e: React.MouseEvent) => void;
+    onEdit?: (e: React.MouseEvent) => void;
 }
 
-export function ResourceCard({ resource, onClick, onDelete }: ResourceCardProps) {
+export function ResourceCard({ resource, onClick, onDelete, onEdit }: ResourceCardProps) {
     
     const handleDeleteClick = (e: React.MouseEvent) => {
         // Stop the click from bubbling up to the main card's onClick handler
         e.stopPropagation();
         onDelete(e);
+    };
+
+    const handleEditClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        onEdit?.(e);
     };
 
     return (
@@ -35,16 +47,37 @@ export function ResourceCard({ resource, onClick, onDelete }: ResourceCardProps)
                 statusStyles[resource.status].border
             )}
         >
-            {/* Delete button, with a higher z-index to be on top */}
-            <Button
-                variant="ghost"
-                size="icon"
-                className="absolute top-2 right-2 h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-opacity z-20"
-                onClick={handleDeleteClick}
-                aria-label={`Eliminar recurso ${resource.name}`}
-            >
-                <Trash2 className="h-4 w-4" />
-            </Button>
+            {/* Menu button, with a higher z-index to be on top */}
+            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                            onClick={(e) => e.stopPropagation()}
+                            aria-label={`Opciones para ${resource.name}`}
+                        >
+                            <MoreVertical className="h-4 w-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        {onEdit && (
+                            <DropdownMenuItem onClick={handleEditClick}>
+                                <Edit className="mr-2 h-4 w-4" />
+                                Editar numeración
+                            </DropdownMenuItem>
+                        )}
+                        <DropdownMenuItem 
+                            onClick={handleDeleteClick}
+                            className="text-destructive focus:text-destructive"
+                        >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Eliminar
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </div>
             
             {/* Main clickable area, which doesn't include the delete button */}
             <div

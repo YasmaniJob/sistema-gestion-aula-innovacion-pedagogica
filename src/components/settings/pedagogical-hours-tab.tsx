@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { PlusCircle, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
+import { DeleteConfirmationDialog } from '../delete-confirmation-dialog';
 import { useData } from '@/context/data-provider-refactored';
 import type { PedagogicalHour } from '@/domain/types';
 
@@ -141,23 +141,13 @@ export function PedagogicalHoursTab() {
         </CardContent>
       </Card>
 
-      <AlertDialog open={!!hourToDelete} onOpenChange={(isOpen) => !isOpen && setHourToDelete(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta acción no se puede deshacer. Se eliminará permanentemente el bloque 
-              <strong> {hourToDelete ? getPedagogicalHourName(hourToDelete) : ''}</strong>.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setHourToDelete(null)}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">
-              Sí, eliminar
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteConfirmationDialog
+        isOpen={!!hourToDelete}
+        onOpenChange={(isOpen) => !isOpen && setHourToDelete(null)}
+        onConfirm={confirmDelete}
+        title="¿Estás seguro?"
+        description={`Esta acción no se puede deshacer. Se eliminará permanentemente el bloque ${hourToDelete ? getPedagogicalHourName(hourToDelete) : ''}.`}
+      />
     </>
   );
 }
