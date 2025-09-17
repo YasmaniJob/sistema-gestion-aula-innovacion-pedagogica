@@ -70,21 +70,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<LoanUser | null>(null);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
   const [isHydrated, setIsHydrated] = useState(false);
+  const [sessionChecked, setSessionChecked] = useState(false);
 
   // Verificar sesión inicial
   useEffect(() => {
     // Marcar como hidratado
     setIsHydrated(true);
     
+    // Evitar múltiples verificaciones
+    if (sessionChecked) {
+      return;
+    }
+    
     const checkUserSession = async () => {
+      console.log('AuthProvider: Iniciando verificación de sesión');
       setIsLoadingUser(true);
       
       try {
-        console.log('AuthProvider: Iniciando verificación de sesión');
+        console.log('AuthProvider: Verificando sesión activa...');
         
         // Crear un timeout para evitar carga infinita
         const timeoutPromise = new Promise((_, reject) => {
-          setTimeout(() => reject(new Error('Timeout en verificación de sesión')), 10000);
+          setTimeout(() => reject(new Error('Timeout en verificación de sesión')), 8000);
         });
         
         // Verificar si hay sesión activa con timeout
@@ -92,25 +99,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const session = await Promise.race([sessionPromise, timeoutPromise]);
         
         if (session?.user) {
-          console.log('AuthProvider: Sesión activa encontrada');
+          console.log('AuthProvider: Sesión activa encontrada para usuario:', session.user.id);
           
           // Si hay sesión activa, verificar si tenemos el perfil en localStorage
           const storedUser = localStorage.getItem('currentUser');
+          console.log('AuthProvider: Usuario en localStorage:', storedUser ? 'Encontrado' : 'No encontrado');
           
           if (storedUser) {
             try {
               const parsedUser = JSON.parse(storedUser);
               // Verificar que el usuario almacenado coincida con la sesión
               if (parsedUser.id === session.user.id) {
-                console.log('AuthProvider: Usuario válido encontrado en localStorage');
+                console.log('AuthProvider: Usuario válido encontrado en localStorage, estableciendo usuario');
                 setCurrentUser(parsedUser);
               } else {
-                console.log('AuthProvider: Usuario en localStorage no coincide con sesión');
+                console.log('AuthProvider: Usuario en localStorage no coincide con sesión, limpiando');
                 localStorage.removeItem('currentUser');
                 await signOutSvc(); // Limpiar sesión inconsistente
               }
             } catch (error) {
-              console.error("Error al parsear usuario de localStorage:", error);
+              console.error("AuthProvider: Error al parsear usuario de localStorage:", error);
               localStorage.removeItem('currentUser');
             }
           } else {
@@ -127,24 +135,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           console.log('AuthProvider: No hay sesión activa');
         }
       } catch (error) {
-        console.error('Error al verificar sesión:', error);
+        console.error('AuthProvider: Error al verificar sesión:', error);
         // En caso de error o timeout, limpiar todo
         localStorage.removeItem('currentUser');
         setCurrentUser(null);
       } finally {
+        console.log('AuthProvider: Finalizando carga de usuario');
         setIsLoadingUser(false);
+        setSessionChecked(true);
         console.log('AuthProvider: Verificación de sesión completada');
       }
     };
     
     // Solo ejecutar si estamos en el cliente
     if (typeof window !== 'undefined') {
+      console.log('AuthProvider: Ejecutando verificación de sesión en cliente');
       checkUserSession();
     } else {
       // En el servidor, marcar como no cargando
+      console.log('AuthProvider: Ejecutando en servidor, saltando verificación');
       setIsLoadingUser(false);
+      setSessionChecked(true);
     }
-  }, []);
+  }, [sessionChecked]);
 
   const signIn = useCallback(async (credentials: { email: string; password: string }) => {
     try {

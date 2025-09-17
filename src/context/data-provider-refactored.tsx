@@ -213,16 +213,26 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     let isMounted = true;
     
     const loadAppData = async () => {
+      console.log('DataProvider: Evaluando carga de datos', {
+        isLoadingRef: isLoadingRef.current,
+        hasLoadedDataRef: hasLoadedDataRef.current,
+        isLoadingUser,
+        currentUser: !!currentUser
+      });
+      
       // Evitar múltiples cargas simultáneas
       if (isLoadingRef.current || hasLoadedDataRef.current) {
+        console.log('DataProvider: Evitando carga múltiple - isLoading:', isLoadingRef.current, 'hasLoaded:', hasLoadedDataRef.current);
         return;
       }
       
       // Solo cargar si el usuario ya no está cargando
       if (isLoadingUser) {
+        console.log('DataProvider: Esperando que termine la carga del usuario');
         return;
       }
       
+      console.log('DataProvider: Iniciando carga de datos de la aplicación');
       isLoadingRef.current = true;
       hasLoadedDataRef.current = true;
       setIsLoadingData(true);
@@ -230,7 +240,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       try {
         console.log('Loading app data...');
         
-        const [fetchedUsers, fetchedResources, fetchedCategories, fetchedLoans, fetchedReservations, fetchedMeetings, fetchedAreas, fetchedGrades, fetchedHours] = await Promise.allSettled([
+        // Crear timeout para evitar carga infinita
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Timeout en carga de datos de la aplicación')), 15000);
+        });
+        
+        // Cargar todos los datos en paralelo usando Promise.allSettled
+        const dataPromise = Promise.allSettled([
           getUsers(),
           resourceService.getResources(),
           resourceService.getCategories(),
@@ -248,6 +264,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           }),
         ]);
         
+        const [fetchedUsers, fetchedResources, fetchedCategories, fetchedLoans, fetchedReservations, fetchedMeetings, fetchedAreas, fetchedGrades, fetchedHours] = await Promise.race([dataPromise, timeoutPromise]);
+        
         // Procesar resultados
         const users = fetchedUsers.status === 'fulfilled' ? fetchedUsers.value || [] : [];
         const resources = fetchedResources.status === 'fulfilled' ? fetchedResources.value || [] : [];
@@ -260,6 +278,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         const hours = fetchedHours.status === 'fulfilled' ? fetchedHours.value || [] : [];
         
         if (isMounted) {
+          console.log('DataProvider: Procesando datos cargados', {
+            usersCount: users.length,
+            resourcesCount: resources.length,
+            loansCount: loans.length,
+            reservationsCount: reservations.length
+          });
+          
           // Establecer usuarios primero
           setUsers(users);
           
@@ -315,11 +340,28 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           setGrades(grades);
           setPedagogicalHours(hours);
           
-          console.log('App data loaded successfully');
+          console.log('DataProvider: Datos de la aplicación cargados exitosamente', {
+            finalUsersCount: users.length,
+            finalResourcesCount: resources.length,
+            finalLoansCount: processedLoans.length,
+            finalReservationsCount: processedReservations.length
+          });
         }
       } catch (error) {
-        console.error('Error loading app data:', error);
+        console.error('DataProvider: Error cargando datos de la aplicación:', error);
+        // En caso de error o timeout, resetear los flags para permitir reintentos
+        hasLoadedDataRef.current = false;
+        isLoadingRef.current = false;
+        
+        // Si es un timeout, mostrar mensaje específico
+        if (error instanceof Error && error.message.includes('Timeout')) {
+          console.warn('DataProvider: Timeout en carga de datos - la aplicación puede seguir funcionando con datos parciales');
+        }
       } finally {
+        console.log('DataProvider: Finalizando carga de datos', {
+          isMounted,
+          isLoadingRef: isLoadingRef.current
+        });
         if (isMounted) {
           setIsLoadingData(false);
         }
@@ -749,7 +791,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     try {
       console.log('Refreshing all data...');
       
-      const [fetchedUsers, fetchedResources, fetchedCategories, fetchedLoans, fetchedReservations, fetchedMeetings, fetchedAreas, fetchedGrades, fetchedHours] = await Promise.allSettled([
+      // Crear timeout para evitar carga infinita
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Timeout en carga de datos de la aplicación')), 15000);
+      });
+      
+      // Cargar todos los datos en paralelo usando Promise.allSettled
+      const dataPromise = Promise.allSettled([
         getUsers(),
         resourceService.getResources(),
         resourceService.getCategories(),
@@ -766,6 +814,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           return [];
         }),
       ]);
+      
+      const [fetchedUsers, fetchedResources, fetchedCategories, fetchedLoans, fetchedReservations, fetchedMeetings, fetchedAreas, fetchedGrades, fetchedHours] = await Promise.race([dataPromise, timeoutPromise]);
       
       // Procesar resultados
       const users = fetchedUsers.status === 'fulfilled' ? fetchedUsers.value || [] : [];
