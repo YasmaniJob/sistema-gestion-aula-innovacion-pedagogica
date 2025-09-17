@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useCallback, useRef } from 'react';
+import { useEffect, useCallback, useRef, useState } from 'react';
 import { useAuth } from '@/context/auth-provider';
 // Client-side auth functions with improved error handling
 const getSession = async () => {
@@ -88,11 +88,20 @@ export function useSessionManager(options: UseSessionManagerOptions = {}) {
   const { toast } = useToast();
   const router = useRouter();
   
+  // Estado para controlar la hidratación
+  const [isHydrated, setIsHydrated] = useState(false);
+  
   const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const inactivityTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const warningTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastActivityRef = useRef<number>(Date.now());
   const isWarningShownRef = useRef<boolean>(false);
+  const isInitializedRef = useRef<boolean>(false);
+
+  // Efecto para manejar la hidratación
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
 
   // Actualizar última actividad
   const updateLastActivity = useCallback(() => {
@@ -317,14 +326,26 @@ export function useSessionManager(options: UseSessionManagerOptions = {}) {
 
   // Configurar refresh automático
   useEffect(() => {
+    // Solo ejecutar después de la hidratación
+    if (!isHydrated) return;
+    
+    // Evitar múltiples inicializaciones
+    if (isInitializedRef.current) return;
+    
+    if (!currentUser) {
+      return;
+    }
+
+    isInitializedRef.current = true;
     setupAutoRefresh();
     
     return () => {
       if (refreshIntervalRef.current) {
         clearInterval(refreshIntervalRef.current);
       }
+      isInitializedRef.current = false;
     };
-  }, [setupAutoRefresh]);
+  }, [isHydrated, currentUser, setupAutoRefresh]);
 
   // Limpiar todos los timers al desmontar
   useEffect(() => {

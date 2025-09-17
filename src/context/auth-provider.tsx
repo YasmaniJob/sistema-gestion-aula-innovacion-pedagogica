@@ -69,17 +69,31 @@ export function useAuth() {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<LoanUser | null>(null);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
+  const [isHydrated, setIsHydrated] = useState(false);
 
   // Verificar sesión inicial
   useEffect(() => {
+    // Marcar como hidratado
+    setIsHydrated(true);
+    
     const checkUserSession = async () => {
       setIsLoadingUser(true);
       
       try {
-        // Verificar si hay una sesión activa en Supabase
-        const session = await getSession();
+        console.log('AuthProvider: Iniciando verificación de sesión');
+        
+        // Crear un timeout para evitar carga infinita
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Timeout en verificación de sesión')), 10000);
+        });
+        
+        // Verificar si hay sesión activa con timeout
+        const sessionPromise = getSession();
+        const session = await Promise.race([sessionPromise, timeoutPromise]);
         
         if (session?.user) {
+          console.log('AuthProvider: Sesión activa encontrada');
+          
           // Si hay sesión activa, verificar si tenemos el perfil en localStorage
           const storedUser = localStorage.getItem('currentUser');
           
@@ -114,7 +128,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       } catch (error) {
         console.error('Error al verificar sesión:', error);
-        // En caso de error, limpiar todo
+        // En caso de error o timeout, limpiar todo
         localStorage.removeItem('currentUser');
         setCurrentUser(null);
       } finally {
@@ -123,7 +137,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     };
     
-    checkUserSession();
+    // Solo ejecutar si estamos en el cliente
+    if (typeof window !== 'undefined') {
+      checkUserSession();
+    } else {
+      // En el servidor, marcar como no cargando
+      setIsLoadingUser(false);
+    }
   }, []);
 
   const signIn = useCallback(async (credentials: { email: string; password: string }) => {

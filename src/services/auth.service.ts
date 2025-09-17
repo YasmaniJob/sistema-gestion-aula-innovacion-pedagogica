@@ -3,6 +3,7 @@
 
 import { supabase } from '@/infrastructure/supabase/client';
 import type { User } from '@supabase/supabase-js';
+import { TIMEOUTS, withTimeout } from '@/config/timeouts';
 
 // Tipos para mejor tipado
 interface SignInCredentials {
@@ -25,6 +26,8 @@ function isValidEmail(email: string): boolean {
 function isValidPassword(password: string): boolean {
   return password.length >= 6; // Mínimo 6 caracteres
 }
+
+// Las funciones de timeout ahora están centralizadas en @/config/timeouts
 
 /**
  * Inicia sesión con email y contraseña
@@ -50,10 +53,15 @@ export async function signIn({ email, password }: SignInCredentials): Promise<Us
     }
 
     try {
-        const { data, error } = await supabase.auth.signInWithPassword({
-            email: email.trim().toLowerCase(),
-            password,
-        });
+        // Usar timeout centralizado para inicio de sesión
+        const { data, error } = await withTimeout(
+            supabase.auth.signInWithPassword({
+                email: email.trim().toLowerCase(),
+                password,
+            }),
+            TIMEOUTS.AUTH.SIGN_IN,
+            'inicio de sesión'
+        );
 
         if (error) {
             console.error('Error al iniciar sesión:', error.message);
@@ -124,7 +132,12 @@ export async function getCurrentUser(): Promise<User | null> {
  */
 export async function getSession(): Promise<any> {
     try {
-        const { data: { session }, error } = await supabase.auth.getSession();
+        // Usar timeout centralizado para obtener sesión
+        const { data: { session }, error } = await withTimeout(
+            supabase.auth.getSession(),
+            TIMEOUTS.AUTH.GET_SESSION,
+            'obtener sesión'
+        );
         
         if (error) {
             console.error('Error al obtener sesión:', error.message);
