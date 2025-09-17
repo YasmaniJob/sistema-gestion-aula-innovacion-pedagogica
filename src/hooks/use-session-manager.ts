@@ -2,21 +2,68 @@
 
 import { useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/context/auth-provider';
-// Client-side auth functions
+// Client-side auth functions with improved error handling
 const getSession = async () => {
-  const response = await fetch('/api/auth?action=getSession');
-  if (!response.ok) throw new Error('Failed to get session');
-  return response.json();
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+  
+  try {
+    const response = await fetch('/api/auth?action=getSession', {
+      signal: controller.signal,
+      headers: {
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
+      }
+    });
+    clearTimeout(timeoutId);
+    
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        return null; // Session expired
+      }
+      throw new Error(`Failed to get session: ${response.status}`);
+    }
+    return response.json();
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      throw new Error('Session check timeout');
+    }
+    throw error;
+  }
 };
 
 const refreshSession = async () => {
-  const response = await fetch('/api/auth', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'refreshSession' })
-  });
-  if (!response.ok) throw new Error('Failed to refresh session');
-  return response.json();
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+  
+  try {
+    const response = await fetch('/api/auth', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
+      },
+      body: JSON.stringify({ action: 'refreshSession' }),
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+    
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        return null; // Session expired
+      }
+      throw new Error(`Failed to refresh session: ${response.status}`);
+    }
+    return response.json();
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      throw new Error('Session refresh timeout');
+    }
+    throw error;
+  }
 };
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
@@ -60,32 +107,71 @@ export function useSessionManager(options: UseSessionManagerOptions = {}) {
     try {
       const session = await getSession();
       
-      if (!session?.user) {
-        console.log('SessionManager: Sesión expirada, cerrando sesión');
+      if (!session || !session.user) {
+        console.log('SessionManager: Sesión expirada, cerrando sesión y redirigiendo');
         await signOut();
         toast({
           title: 'Sesión expirada',
-          description: 'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.',
+          description: 'Tu sesión ha expirado. Redirigiendo a la página de inicio...',
           variant: 'destructive'
         });
+        // Redirección automática cuando la sesión expira
+        router.push('/');
         return;
       }
 
       // Intentar refrescar la sesión si está habilitado
       if (config.autoRefresh) {
         try {
-          await refreshSession();
+          const refreshResult = await refreshSession();
+          if (!refreshResult) {
+            console.log('SessionManager: Refresh retornó null, sesión expirada');
+            await signOut();
+            toast({
+              title: 'Sesión expirada',
+              description: 'Tu sesión ha expirado. Redirigiendo a la página de inicio...',
+              variant: 'destructive'
+            });
+            router.push('/');
+            return;
+          }
           await refreshUserSession();
           console.log('SessionManager: Sesión refrescada exitosamente');
         } catch (refreshError) {
           console.warn('SessionManager: Error al refrescar sesión:', refreshError);
-          // No cerrar sesión inmediatamente, solo registrar el error
+          // Si falla el refresh, verificar si la sesión sigue siendo válida
+          try {
+            const currentSession = await getSession();
+            if (!currentSession || !currentSession.user) {
+              console.log('SessionManager: Sesión inválida después de fallo en refresh, cerrando sesión');
+              await signOut();
+              toast({
+                title: 'Sesión expirada',
+                description: 'Tu sesión ha expirado. Redirigiendo a la página de inicio...',
+                variant: 'destructive'
+              });
+              router.push('/');
+            }
+          } catch (sessionCheckError) {
+            console.error('SessionManager: Error al verificar sesión después de fallo en refresh:', sessionCheckError);
+          }
         }
       }
     } catch (error) {
       console.error('SessionManager: Error al verificar sesión:', error);
+      // Si hay error de red o timeout, intentar verificar la sesión una vez más
+      if (error.message === 'Session check timeout' || error.message.includes('fetch')) {
+        console.log('SessionManager: Error de conectividad detectado, posible sesión expirada');
+        toast({
+          title: 'Problema de conectividad',
+          description: 'Se detectó un problema de conexión. Redirigiendo a la página de inicio...',
+          variant: 'destructive'
+        });
+        await signOut();
+        router.push('/');
+      }
     }
-  }, [currentUser, signOut, refreshUserSession, config.autoRefresh]);
+  }, [currentUser, signOut, refreshUserSession, config.autoRefresh, toast, router]);
 
   // Manejar logout por inactividad
   const handleInactivityLogout = useCallback(async () => {
@@ -178,13 +264,56 @@ export function useSessionManager(options: UseSessionManagerOptions = {}) {
     // Configurar timers iniciales
     setupInactivityTimers();
 
+    // Heartbeat para detectar si la app se queda colgada
+    let lastHeartbeat = Date.now();
+    const heartbeatInterval = setInterval(() => {
+      const now = Date.now();
+      const timeSinceLastHeartbeat = now - lastHeartbeat;
+      
+      // Si han pasado más de 2 minutos sin heartbeat, algo está mal
+      if (timeSinceLastHeartbeat > 120000) {
+        console.warn('SessionManager: Aplicación posiblemente colgada, redirigiendo a inicio');
+        window.location.href = '/';
+        return;
+      }
+      
+      lastHeartbeat = now;
+    }, 30000); // Check every 30 seconds
+
+    // Agregar listener para errores no manejados que podrían colgar la app
+    const handleUnhandledError = (event: ErrorEvent) => {
+      console.error('SessionManager: Error no manejado detectado:', event.error);
+      if (event.error?.message?.includes('session') || 
+          event.error?.message?.includes('auth') ||
+          event.error?.message?.includes('fetch')) {
+        console.log('SessionManager: Error relacionado con sesión, redirigiendo a inicio');
+        router.push('/');
+      }
+    };
+
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      console.error('SessionManager: Promise rechazada no manejada:', event.reason);
+      if (event.reason?.message?.includes('session') || 
+          event.reason?.message?.includes('auth') ||
+          event.reason?.message?.includes('fetch')) {
+        console.log('SessionManager: Error de promesa relacionado con sesión, redirigiendo a inicio');
+        router.push('/');
+      }
+    };
+
+    window.addEventListener('error', handleUnhandledError);
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+
     return () => {
       // Limpiar listeners
       activityEvents.forEach(event => {
         document.removeEventListener(event, handleActivity);
       });
+      clearInterval(heartbeatInterval);
+      window.removeEventListener('error', handleUnhandledError);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
     };
-  }, [currentUser, updateLastActivity, setupInactivityTimers]);
+  }, [currentUser, updateLastActivity, setupInactivityTimers, router]);
 
   // Configurar refresh automático
   useEffect(() => {
