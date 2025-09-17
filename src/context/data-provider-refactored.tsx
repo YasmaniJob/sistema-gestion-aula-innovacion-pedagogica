@@ -893,7 +893,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     currentUser, isLoadingData, appSettings, updateAppSettings, signOut, findUserById, addUser, registerUser, updateUser,
     deleteUser, addMultipleUsers, addLoan, approveLoan, rejectLoan, processReturn, addResource,
     updateResource, deleteResource, updateResourceStatus, refreshResources, refreshLoans, refreshAllData,
-    addCategories, deleteCategory, addReservation, updateReservationStatus, debouncedRefreshReservations, refreshReservations,
+    addCategories, deleteCategory, addReservation, updateReservationStatus, refreshReservations,
     addMeeting, toggleMeetingTaskStatus, addAreas, updateArea, deleteArea, addGrade, deleteGrade,
     addSection, deleteSection, addPedagogicalHour, deletePedagogicalHour
   ]);
