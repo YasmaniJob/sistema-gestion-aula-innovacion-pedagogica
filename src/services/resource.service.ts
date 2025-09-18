@@ -178,6 +178,7 @@ export async function updateResource(
   dataToUpdate: Partial<Omit<Resource, 'id' | 'category'>>
 ): Promise<Resource | null> {
     const dbUpdateData: any = {};
+    if (dataToUpdate.name) dbUpdateData.name = dataToUpdate.name;
     if (dataToUpdate.brand) dbUpdateData.brand = dataToUpdate.brand;
     if (dataToUpdate.model) dbUpdateData.model = dataToUpdate.model;
     if (dataToUpdate.notes) dbUpdateData.notes = dataToUpdate.notes;

@@ -271,6 +271,12 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         return;
       }
       
+      // Verificación adicional: evitar cargas si ya hay datos cargados y no es un retry
+      if (retryCount === 0 && hasLoadedDataRef.current && users.length > 0) {
+        console.log('DataProvider: Datos ya cargados, evitando recarga innecesaria');
+        return;
+      }
+      
       console.log(`DataProvider: Iniciando carga de datos de la aplicación (intento ${retryCount + 1}/${maxRetries + 1})`);
       isLoadingRef.current = true;
       if (retryCount === 0) {
