@@ -55,6 +55,13 @@ export function EditResourceNumberDialog({
     onOpenChange(false);
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !isLoading && number.trim()) {
+      e.preventDefault();
+      handleSave();
+    }
+  };
+
   return (
     <AdaptiveDialog
       isOpen={isOpen}
@@ -69,6 +76,7 @@ export function EditResourceNumberDialog({
             id="resource-number"
             value={number}
             onChange={(e) => setNumber(e.target.value)}
+            onKeyDown={handleKeyDown}
             placeholder="Ingrese el número del recurso"
             disabled={isLoading}
           />

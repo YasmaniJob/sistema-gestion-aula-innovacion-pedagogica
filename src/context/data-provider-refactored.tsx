@@ -295,7 +295,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         
         const timeoutPromise = new Promise((_, reject) => {
           setTimeout(() => {
-            console.error(`DataProvider: Timeout después de ${timeoutMs}ms en ${isProduction ? 'producción' : 'desarrollo'}`);
+            console.warn(`DataProvider: Timeout después de ${timeoutMs}ms en ${isProduction ? 'producción' : 'desarrollo'} - la aplicación puede seguir funcionando`);
             reject(new Error(`Timeout en carga de datos de la aplicación (${timeoutMs}ms)`));
           }, timeoutMs);
         });
