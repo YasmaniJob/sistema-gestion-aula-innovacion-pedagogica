@@ -45,7 +45,7 @@ import { cn } from '@/lib/utils';
 export default function LoansPage() {
   useAuthorization('Admin');
   usePageTitle('Gestión de Préstamos');
-  const { loans, approveLoan, rejectLoan, isLoadingUser } = useData();
+  const { loans, approveLoan, rejectLoan, isLoadingUser, isLoadingData } = useData();
   const [activeTab, setActiveTab] = useState('active');
   
   const { toast } = useToast();
@@ -191,7 +191,7 @@ export default function LoansPage() {
     filterWithSuggestions
   ].filter(Boolean).length;
 
-  if (isLoadingUser) {
+  if (isLoadingUser || isLoadingData) {
       return (
           <div className="space-y-6">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
