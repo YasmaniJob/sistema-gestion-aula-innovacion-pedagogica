@@ -171,6 +171,11 @@ class ProductionConfigService {
     return value.split(',').map(item => item.trim());
   }
 
+  private getEnvString(key: string, defaultValue: string): string {
+    const value = process.env[key];
+    return value !== undefined ? value : defaultValue;
+  }
+
   // Getters para acceder a la configuración
   get database() {
     return this.config.database;
