@@ -60,6 +60,9 @@ export async function getResources(limit: number = 200, offset: number = 0): Pro
         category: r.categories?.name || 'Sin categoría', // Handle null category
         attributes: r.attributes,
         notes: r.notes,
+        relatedAccessories: r.related_accessories || [],
+        isAccessory: r.is_accessory || false,
+        compatibleWith: r.compatible_with || [],
     }));
 }
 
@@ -124,18 +127,27 @@ export async function addResource(
   const categoryId = categoryData.id;
   const categorySingular = data.category?.slice(0, -1) || 'Recurso';
 
-  // 2. Find the last number for this category
-  let { data: lastResource, error: rpcError } = await supabaseAdmin.rpc('get_last_resource_number_for_category', {
-      p_category_name: data.category
-  });
+  // 2. Find the last number for this category (globally, not per brand)
+  const { data: existingResources, error: queryError } = await supabaseAdmin
+    .from('resources')
+    .select('name')
+    .eq('category_id', categoryId)
+    .order('created_at', { ascending: false });
 
-  if (rpcError) {
-      console.error('Error getting last resource number:', rpcError);
-      // Fallback to a less accurate method if RPC fails
-      lastResource = 0;
+  let lastNumber = 0;
+  if (queryError) {
+    console.error('Error getting existing resources:', queryError);
+  } else if (existingResources && existingResources.length > 0) {
+    // Extract numbers from all resource names and find the highest
+    const numbers = existingResources
+      .map(resource => {
+        const match = resource.name.match(/(\d+)$/);
+        return match ? parseInt(match[1], 10) : 0;
+      })
+      .filter(num => num > 0);
+    
+    lastNumber = numbers.length > 0 ? Math.max(...numbers) : 0;
   }
-  
-  let lastNumber = lastResource || 0;
 
   // 3. Prepare the new resources
   const newResourcesToInsert = [];

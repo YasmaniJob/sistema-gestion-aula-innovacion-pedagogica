@@ -1,0 +1,53 @@
+{
+  "name": "Sistema de Gestión de Recursos AIP",
+  "short_name": "AIP Recursos",
+  "description": "Sistema de gestión de recursos tecnológicos para préstamos y control de inventario",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "es",
+  "categories": ["productivity", "business"],
+  "icons": [
+    {
+      "src": "/icon-192x192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icon-512x512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Nuevo Préstamo",
+      "short_name": "Préstamo",
+      "description": "Crear un nuevo préstamo de recursos",
+      "url": "/loans/new",
+      "icons": [
+        {
+          "src": "/icon-192x192.svg",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Ver Recursos",
+      "short_name": "Recursos",
+      "description": "Ver todos los recursos disponibles",
+      "url": "/resources",
+      "icons": [
+        {
+          "src": "/icon-192x192.svg",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
+}

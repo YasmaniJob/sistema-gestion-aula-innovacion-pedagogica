@@ -48,7 +48,7 @@ export function ResourceCard({ resource, onClick, onDelete, onEdit }: ResourceCa
             )}
         >
             {/* Menu button, with a higher z-index to be on top */}
-            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+            <div className="absolute top-2 right-2 opacity-100 transition-opacity z-20">
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button

@@ -25,6 +25,10 @@ export type Resource = {
     category?: string;
     attributes?: { [key: string]: string };
     notes?: string;
+    // Nuevos campos para accesorios relacionados
+    relatedAccessories?: string[]; // IDs de accesorios que pueden ir con este recurso
+    isAccessory?: boolean; // Indica si este recurso es un accesorio
+    compatibleWith?: string[]; // IDs de recursos principales con los que es compatible (para accesorios)
 }
 
 export type Category = {

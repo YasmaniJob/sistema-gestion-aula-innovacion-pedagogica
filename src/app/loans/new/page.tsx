@@ -20,6 +20,7 @@ import {
   Building,
   MessageCircle,
   BookOpen,
+  Plug,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -47,15 +48,31 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { UserSelector } from '@/components/user-selector';
 import { CategorySelector } from '@/components/category-selector';
+import { AccessorySelector } from '@/components/accessory-selector';
 import { useAuthorization } from '@/hooks/use-authorization';
 import { useData } from '@/context/data-provider-refactored';
 import { usePageTitle } from '@/hooks/use-page-title';
+import { useAccessorySelection } from '@/hooks/use-accessory-selection';
 
 export default function NewLoanPage() {
   useAuthorization('Admin');
   usePageTitle('Crear Préstamo');
   const { addLoan, resources: allResources, currentUser, areas, grades } = useData();
   const [selectedResources, setSelectedResources] = useState<Resource[]>([]);
+  
+  // Hook para manejo de accesorios
+  const {
+    availableAccessories,
+    selectedAccessories,
+    suggestedAccessories,
+    toggleAccessory,
+    clearAccessories,
+    selectAllSuggested,
+  } = useAccessorySelection({
+    selectedResources,
+    allResources,
+    autoSelectChargers: true,
+  });
   const [activeCategory, setActiveCategory] = useState<string>('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
@@ -151,7 +168,7 @@ export default function NewLoanPage() {
         purposeDetails: loanPurpose === 'aprendizaje' 
             ? { area: selectedArea, grade: selectedGrade, section: selectedSection, activityName: `${selectedArea} - ${selectedGrade} ${selectedSection}` }
             : { activityName: internalUsageDetails },
-        resources: selectedResources.map(r => ({ id: r.id, name: r.name, brand: r.brand })),
+        resources: [...selectedResources, ...selectedAccessories].map(r => ({ id: r.id, name: r.name, brand: r.brand })),
         };
         
         await addLoan(newLoanData, currentUser.role);
@@ -362,6 +379,16 @@ export default function NewLoanPage() {
                   </PaginationContent>
                 </Pagination>
               )}
+              
+              {/* Selector de Accesorios */}
+              <AccessorySelector
+                selectedMainResources={selectedResources.filter(r => 
+                  r.category === 'Laptops' || r.category === 'Proyectores' || r.category === 'Tablets'
+                )}
+                availableAccessories={availableAccessories}
+                selectedAccessories={selectedAccessories}
+                onAccessoryToggle={toggleAccessory}
+              />
             </CardContent>
           </Card>
         </div>
@@ -399,8 +426,8 @@ export default function NewLoanPage() {
               </div>
               <Separator />
               <div>
-                <h4 className="font-medium text-sm mb-2">Recursos Seleccionados ({selectedResources.length})</h4>
-                <div className="space-y-2 max-h-60 overflow-y-auto">
+                <h4 className="font-medium text-sm mb-2">Recursos Principales ({selectedResources.length})</h4>
+                <div className="space-y-2 max-h-40 overflow-y-auto">
                   {selectedResources.length > 0 ? (
                     selectedResources.map(resource => (
                       <div key={resource.id} className="flex items-center justify-between p-2 rounded-md bg-muted/50">
@@ -423,6 +450,28 @@ export default function NewLoanPage() {
                   )}
                 </div>
               </div>
+              
+              {selectedAccessories.length > 0 && (
+                <div>
+                  <h4 className="font-medium text-sm mb-2">Accesorios Incluidos ({selectedAccessories.length})</h4>
+                  <div className="space-y-2 max-h-32 overflow-y-auto">
+                    {selectedAccessories.map(accessory => (
+                      <div key={accessory.id} className="flex items-center justify-between p-2 rounded-md bg-blue-50 border border-blue-200">
+                        <div className="flex items-center gap-2">
+                            <Plug className="h-4 w-4 text-blue-600" />
+                            <div>
+                                <p className="text-sm font-medium">{accessory.name}</p>
+                                <p className="text-xs text-muted-foreground">{accessory.brand}</p>
+                            </div>
+                        </div>
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => toggleAccessory(accessory)}>
+                            <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               <Separator />
               <Button 
                 size="lg" 

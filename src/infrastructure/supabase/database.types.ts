@@ -68,6 +68,9 @@ export type Database = {
           category_id: string | null
           attributes: Json | null
           notes: string | null
+          related_accessories: string[] | null
+          is_accessory: boolean | null
+          compatible_with: string[] | null
           created_at: string
         }
         Insert: {
@@ -81,6 +84,9 @@ export type Database = {
           category_id?: string | null
           attributes?: Json | null
           notes?: string | null
+          related_accessories?: string[] | null
+          is_accessory?: boolean | null
+          compatible_with?: string[] | null
           created_at?: string
         }
         Update: {
@@ -94,6 +100,9 @@ export type Database = {
           category_id?: string | null
           attributes?: Json | null
           notes?: string | null
+          related_accessories?: string[] | null
+          is_accessory?: boolean | null
+          compatible_with?: string[] | null
           created_at?: string
         }
         Relationships: [

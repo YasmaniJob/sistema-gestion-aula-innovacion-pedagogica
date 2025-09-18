@@ -1,0 +1,23 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="512" height="512" rx="64" fill="#2563eb"/>
+  <g transform="translate(86, 86)">
+    <!-- Icono de recursos/inventario -->
+    <rect x="54" y="54" width="232" height="232" rx="20" fill="white" fill-opacity="0.1" stroke="white" stroke-width="6"/>
+    <rect x="86" y="86" width="168" height="168" rx="12" fill="white" fill-opacity="0.2"/>
+    
+    <!-- Elementos de inventario -->
+    <rect x="108" y="108" width="124" height="20" rx="6" fill="white"/>
+    <rect x="108" y="148" width="84" height="20" rx="6" fill="white" fill-opacity="0.8"/>
+    <rect x="108" y="188" width="104" height="20" rx="6" fill="white" fill-opacity="0.6"/>
+    
+    <!-- Icono de préstamo/intercambio -->
+    <circle cx="64" cy="256" r="32" fill="white" fill-opacity="0.9"/>
+    <path d="M48 256 L64 240 L80 256 M64 240 L64 272" stroke="#2563eb" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    
+    <circle cx="276" cy="256" r="32" fill="white" fill-opacity="0.9"/>
+    <path d="M292 256 L276 272 L260 256 M276 272 L276 240" stroke="#2563eb" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    
+    <!-- Texto AIP -->
+    <text x="170" y="320" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="42" font-weight="bold">AIP</text>
+  </g>
+</svg>

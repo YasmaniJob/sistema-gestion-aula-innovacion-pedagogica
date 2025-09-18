@@ -41,17 +41,17 @@ export function CategorySelector({
   }, [emblaApi, activeCategory, sortedCategories]);
 
   return (
-    <div className="w-full">
+    <div className="w-full overflow-hidden">
       <div className="embla" ref={emblaRef}>
         <div className="embla__container flex space-x-2 p-1">
           {sortedCategories.map((category) => {
             const { icon: Icon, color } = getCategoryVisuals(category.name);
             const isActive = category.name === activeCategory;
             return (
-              <div key={category.name} className="embla__slide">
+              <div key={category.name} className="embla__slide flex-shrink-0">
                 <Button
                   variant={isActive ? 'default' : 'outline'}
-                  className="flex items-center gap-2 w-full"
+                  className="flex items-center gap-2 whitespace-nowrap"
                   onClick={() => onCategoryChange(category.name)}
                 >
                   <Icon className={cn('h-4 w-4', isActive ? '' : color)} />

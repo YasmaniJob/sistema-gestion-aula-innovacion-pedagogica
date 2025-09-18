@@ -31,7 +31,7 @@ export function CategoryCard({ category, resourceCount, availableResources, onDe
   return (
     <Link href={`/inventory/${category.name}`} className="block group">
         <Card className={cn("transition-all hover:shadow-lg hover:-translate-y-1 relative border-2 flex flex-col h-full")}>
-             <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+             <div className="absolute top-2 right-2 opacity-100 transition-opacity">
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button
