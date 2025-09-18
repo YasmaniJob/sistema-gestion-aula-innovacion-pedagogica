@@ -20,6 +20,7 @@ import * as areaService from '@/services/client/area.client';
 import * as gradeService from '@/services/client/grade.client';
 import * as pedagogicalHourService from '@/services/client/pedagogical-hour.client';
 import * as settingsService from '@/services/client/settings.client';
+import { productionConfig } from '@/config/production-config';
 
 interface AppSettings {
   appName: string;
@@ -212,16 +213,20 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let isMounted = true;
     
-    const loadAppData = async () => {
+    const loadAppData = async (retryCount = 0) => {
+      const maxRetries = productionConfig.vercel.retries;
+      
       console.log('DataProvider: Evaluando carga de datos', {
         isLoadingRef: isLoadingRef.current,
         hasLoadedDataRef: hasLoadedDataRef.current,
         isLoadingUser,
-        currentUser: !!currentUser
+        currentUser: !!currentUser,
+        retryCount,
+        maxRetries
       });
       
-      // Evitar múltiples cargas simultáneas
-      if (isLoadingRef.current || hasLoadedDataRef.current) {
+      // Evitar múltiples cargas simultáneas (excepto en reintentos)
+      if (retryCount === 0 && (isLoadingRef.current || hasLoadedDataRef.current)) {
         console.log('DataProvider: Evitando carga múltiple - isLoading:', isLoadingRef.current, 'hasLoaded:', hasLoadedDataRef.current);
         return;
       }
@@ -232,18 +237,42 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         return;
       }
       
-      console.log('DataProvider: Iniciando carga de datos de la aplicación');
+      console.log(`DataProvider: Iniciando carga de datos de la aplicación (intento ${retryCount + 1}/${maxRetries + 1})`);
       isLoadingRef.current = true;
-      hasLoadedDataRef.current = true;
+      if (retryCount === 0) {
+        hasLoadedDataRef.current = true;
+      }
       setIsLoadingData(true);
       
       try {
         console.log('Loading app data...');
         
-        // Crear timeout para evitar carga infinita
+        // Crear timeout para evitar carga infinita - configuración dinámica
+        const timeoutMs = productionConfig.timeouts.dataLoad;
+        const isProduction = productionConfig.isProductionMode;
+        
+        console.log(`DataProvider: Configurando timeout de ${timeoutMs}ms para ${isProduction ? 'producción' : 'desarrollo'}`);
+        
         const timeoutPromise = new Promise((_, reject) => {
-          setTimeout(() => reject(new Error('Timeout en carga de datos de la aplicación')), 15000);
+          setTimeout(() => {
+            console.error(`DataProvider: Timeout después de ${timeoutMs}ms en ${isProduction ? 'producción' : 'desarrollo'}`);
+            reject(new Error(`Timeout en carga de datos de la aplicación (${timeoutMs}ms)`));
+          }, timeoutMs);
         });
+        
+        // Logs específicos para debugging en producción
+        if (isProduction) {
+          console.log('DataProvider [PROD]: Iniciando carga de datos en Vercel', {
+            region: productionConfig.vercel.region,
+            timeout: timeoutMs,
+            retryAttempt: retryCount + 1,
+            maxRetries: maxRetries + 1,
+            timestamp: new Date().toISOString(),
+            userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'server'
+          });
+        }
+        
+        const startTime = Date.now();
         
         // Cargar todos los datos en paralelo usando Promise.allSettled
         const dataPromise = Promise.allSettled([
@@ -265,6 +294,22 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         ]);
         
         const [fetchedUsers, fetchedResources, fetchedCategories, fetchedLoans, fetchedReservations, fetchedMeetings, fetchedAreas, fetchedGrades, fetchedHours] = await Promise.race([dataPromise, timeoutPromise]);
+        
+        const loadTime = Date.now() - startTime;
+        
+        // Logs de rendimiento para producción
+        if (isProduction) {
+          console.log('DataProvider [PROD]: Datos cargados exitosamente', {
+            loadTimeMs: loadTime,
+            retryAttempt: retryCount + 1,
+            timestamp: new Date().toISOString(),
+            performance: {
+              fast: loadTime < 5000,
+              acceptable: loadTime < 15000,
+              slow: loadTime >= 15000
+            }
+          });
+        }
         
         // Procesar resultados
         const users = fetchedUsers.status === 'fulfilled' ? fetchedUsers.value || [] : [];
@@ -348,14 +393,55 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           });
         }
       } catch (error) {
-        console.error('DataProvider: Error cargando datos de la aplicación:', error);
-        // En caso de error o timeout, resetear los flags para permitir reintentos
+        const loadTime = Date.now() - startTime;
+        
+        console.error(`DataProvider: Error cargando datos de la aplicación (intento ${retryCount + 1}):`, error);
+        
+        // Logs detallados de error para producción
+        if (isProduction) {
+          console.error('DataProvider [PROD]: Error detallado', {
+            error: error instanceof Error ? {
+              name: error.name,
+              message: error.message,
+              stack: error.stack?.substring(0, 500)
+            } : error,
+            loadTimeMs: loadTime,
+            retryAttempt: retryCount + 1,
+            maxRetries: maxRetries + 1,
+            timestamp: new Date().toISOString(),
+            vercelRegion: productionConfig.vercel.region,
+            timeoutMs: timeoutMs
+          });
+        }
+        
+        // Determinar si debemos reintentar
+        const shouldRetry = retryCount < maxRetries && (
+          (error instanceof Error && error.message.includes('Timeout')) ||
+          (error instanceof Error && error.message.includes('fetch')) ||
+          (error instanceof Error && error.message.includes('network'))
+        );
+        
+        if (shouldRetry) {
+          console.log(`DataProvider: Reintentando carga de datos en ${(retryCount + 1) * 2000}ms...`);
+          // Resetear flags para permitir reintento
+          isLoadingRef.current = false;
+          
+          // Esperar antes de reintentar (backoff exponencial)
+          setTimeout(() => {
+            if (isMounted) {
+              loadAppData(retryCount + 1);
+            }
+          }, (retryCount + 1) * 2000);
+          return; // No ejecutar el finally aún
+        }
+        
+        // Si no reintentamos o se agotaron los intentos, resetear flags
         hasLoadedDataRef.current = false;
         isLoadingRef.current = false;
         
         // Si es un timeout, mostrar mensaje específico
         if (error instanceof Error && error.message.includes('Timeout')) {
-          console.warn('DataProvider: Timeout en carga de datos - la aplicación puede seguir funcionando con datos parciales');
+          console.warn(`DataProvider: Timeout en carga de datos después de ${retryCount + 1} intentos - la aplicación puede seguir funcionando con datos parciales`);
         }
       } finally {
         console.log('DataProvider: Finalizando carga de datos', {

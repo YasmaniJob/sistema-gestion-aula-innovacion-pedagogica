@@ -56,6 +56,13 @@ interface ProductionConfig {
     api: number;
     dbQuery: number;
     request: number;
+    dataLoad: number;
+  };
+  vercel: {
+    enabled: boolean;
+    region: string;
+    maxDuration: number;
+    retries: number;
   };
   rateLimit: {
     enabled: boolean;
@@ -128,7 +135,14 @@ class ProductionConfigService {
       timeouts: {
         api: this.getEnvNumber('API_TIMEOUT', 5000),
         dbQuery: this.getEnvNumber('DB_QUERY_TIMEOUT', 3000),
-        request: this.getEnvNumber('REQUEST_TIMEOUT', 10000)
+        request: this.getEnvNumber('REQUEST_TIMEOUT', 10000),
+        dataLoad: this.getEnvNumber('DATA_LOAD_TIMEOUT', this.isProduction ? 30000 : 15000)
+      },
+      vercel: {
+        enabled: this.getEnvBoolean('VERCEL', false) || this.getEnvBoolean('NEXT_PUBLIC_VERCEL_ENV', false),
+        region: this.getEnvString('VERCEL_REGION', 'iad1'),
+        maxDuration: this.getEnvNumber('VERCEL_MAX_DURATION', 10),
+        retries: this.getEnvNumber('VERCEL_RETRIES', this.isProduction ? 3 : 1)
       },
       rateLimit: {
         enabled: this.getEnvBoolean('RATE_LIMIT_ENABLED', true),
@@ -192,6 +206,10 @@ class ProductionConfigService {
 
   get timeouts() {
     return this.config.timeouts;
+  }
+
+  get vercel() {
+    return this.config.vercel;
   }
 
   get rateLimit() {
@@ -314,6 +332,8 @@ export function useProductionConfig() {
     realtime: productionConfig.realtime,
     polling: productionConfig.polling,
     limits: productionConfig.limits,
+    timeouts: productionConfig.timeouts,
+    vercel: productionConfig.vercel,
     validate: () => productionConfig.validateFreeTierLimits(),
     stats: () => productionConfig.getUsageStats()
   };
