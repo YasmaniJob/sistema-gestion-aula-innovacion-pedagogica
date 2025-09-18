@@ -101,7 +101,7 @@ export function useData() {
 }
 
 const defaultAppSettings: AppSettings = {
-  appName: 'Aula Ágil',
+  appName: 'AIP',
   schoolName: 'Mi Institución Educativa',
   logoUrl: '',
   primaryColor: '#673ab7',

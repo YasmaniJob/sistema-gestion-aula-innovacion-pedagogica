@@ -1,4 +1,4 @@
-# **App Name**: Aula Ágil
+# **App Name**: AIP
 
 ## Core Features:
 

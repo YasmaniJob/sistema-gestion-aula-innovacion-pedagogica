@@ -299,7 +299,7 @@ export class OptimizedQueriesService {
     if (error && error.code !== 'PGRST116') throw error;
 
     const settings = data || {
-      app_name: 'Aula Ágil',
+      app_name: 'AIP',
       school_name: 'Mi Institución Educativa',
       logo_url: '',
       primary_color: '#673ab7',
