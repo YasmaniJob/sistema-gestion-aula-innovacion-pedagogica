@@ -22,6 +22,40 @@ import * as pedagogicalHourService from '@/services/client/pedagogical-hour.clie
 import * as settingsService from '@/services/client/settings.client';
 import { productionConfig } from '@/config/production-config';
 
+// Cache para datos estáticos con diferentes duraciones
+const staticDataCache = new Map<string, { data: any; timestamp: number }>();
+const CACHE_DURATION = {
+  categories: 30 * 60 * 1000, // 30 minutos - cambian muy poco
+  areas: 30 * 60 * 1000, // 30 minutos - cambian muy poco
+  grades: 30 * 60 * 1000, // 30 minutos - cambian muy poco
+  settings: 15 * 60 * 1000, // 15 minutos - cambian ocasionalmente
+  users: 5 * 60 * 1000, // 5 minutos - cambian más frecuentemente
+  resources: 5 * 60 * 1000, // 5 minutos - cambian más frecuentemente
+  default: 5 * 60 * 1000 // 5 minutos por defecto
+};
+
+// Función helper para obtener datos del cache
+const getCachedData = <T>(key: string, cacheType: keyof typeof CACHE_DURATION = 'default'): T | null => {
+  const cached = staticDataCache.get(key);
+  if (cached) {
+    const duration = CACHE_DURATION[cacheType];
+    if (Date.now() - cached.timestamp < duration) {
+      console.log(`Cache hit for ${key} (${cacheType})`);
+      return cached.data as T;
+    } else {
+      console.log(`Cache expired for ${key} (${cacheType})`);
+      staticDataCache.delete(key);
+    }
+  }
+  return null;
+};
+
+// Función helper para guardar datos en cache
+const setCachedData = (key: string, data: any): void => {
+  staticDataCache.set(key, { data, timestamp: Date.now() });
+  console.log(`Data cached for ${key}`);
+};
+
 interface AppSettings {
   appName: string;
   schoolName: string;
@@ -274,26 +308,58 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         
         const startTime = Date.now();
         
-        // Cargar todos los datos en paralelo usando Promise.allSettled
-        const dataPromise = Promise.allSettled([
-          getUsers(),
-          resourceService.getResources(),
-          resourceService.getCategories(),
-          loanService.getLoans(),
-          reservationService.getReservations(),
-          meetingService.getMeetings(),
-          areaService.getAreas(),
-          gradeService.getGradesAndSections().catch(err => {
+        // Intentar obtener datos del cache primero
+         const cachedUsers = getCachedData<User[]>('users', 'users');
+        const cachedResources = getCachedData<Resource[]>('resources', 'resources');
+        const cachedCategories = getCachedData<Category[]>('categories', 'categories');
+        const cachedAreas = getCachedData<Area[]>('areas', 'areas');
+        const cachedGrades = getCachedData<Grade[]>('grades', 'grades');
+
+        // Crear promesas solo para datos no cacheados
+        const promises: Promise<any>[] = [];
+        const promiseMap: { [key: string]: number } = {};
+        let promiseIndex = 0;
+
+        if (!cachedUsers) {
+          promises.push(getUsers(100, 0));
+          promiseMap['users'] = promiseIndex++;
+        }
+        if (!cachedResources) {
+          promises.push(resourceService.getResources(200, 0));
+          promiseMap['resources'] = promiseIndex++;
+        }
+        if (!cachedCategories) {
+          promises.push(resourceService.getCategories());
+          promiseMap['categories'] = promiseIndex++;
+        }
+        if (!cachedAreas) {
+          promises.push(areaService.getAreas());
+          promiseMap['areas'] = promiseIndex++;
+        }
+        if (!cachedGrades) {
+          promises.push(gradeService.getGradesAndSections().catch(err => {
             console.warn('Grades service failed, using empty array:', err);
             return [];
-          }),
-          pedagogicalHourService.getPedagogicalHours().catch(err => {
-            console.warn('Pedagogical hours service failed, using empty array:', err);
-            return [];
-          }),
-        ]);
+          }));
+          promiseMap['grades'] = promiseIndex++;
+        }
+
+        // Siempre cargar datos dinámicos (no se cachean por ser muy cambiantes)
+        promises.push(loanService.getLoans());
+        promiseMap['loans'] = promiseIndex++;
+        promises.push(reservationService.getReservations());
+        promiseMap['reservations'] = promiseIndex++;
+        promises.push(meetingService.getMeetings());
+        promiseMap['meetings'] = promiseIndex++;
+        promises.push(pedagogicalHourService.getPedagogicalHours().catch(err => {
+          console.warn('Pedagogical hours service failed, using empty array:', err);
+          return [];
+        }));
+        promiseMap['pedagogicalHours'] = promiseIndex++;
+
+        const dataPromise = Promise.allSettled(promises);
         
-        const [fetchedUsers, fetchedResources, fetchedCategories, fetchedLoans, fetchedReservations, fetchedMeetings, fetchedAreas, fetchedGrades, fetchedHours] = await Promise.race([dataPromise, timeoutPromise]);
+        const results = await Promise.race([dataPromise, timeoutPromise]);
         
         const loadTime = Date.now() - startTime;
         
@@ -307,20 +373,75 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
               fast: loadTime < 5000,
               acceptable: loadTime < 15000,
               slow: loadTime >= 15000
+            },
+            cacheHits: {
+              users: !!cachedUsers,
+              resources: !!cachedResources,
+              categories: !!cachedCategories,
+              areas: !!cachedAreas,
+              grades: !!cachedGrades
             }
           });
         }
         
-        // Procesar resultados
-        const users = fetchedUsers.status === 'fulfilled' ? fetchedUsers.value || [] : [];
-        const resources = fetchedResources.status === 'fulfilled' ? fetchedResources.value || [] : [];
-        const categories = fetchedCategories.status === 'fulfilled' ? fetchedCategories.value || [] : [];
-        const loans = fetchedLoans.status === 'fulfilled' ? fetchedLoans.value || [] : [];
-        const reservations = fetchedReservations.status === 'fulfilled' ? fetchedReservations.value || [] : [];
-        const meetings = fetchedMeetings.status === 'fulfilled' ? fetchedMeetings.value || [] : [];
-        const areas = fetchedAreas.status === 'fulfilled' ? fetchedAreas.value || [] : [];
-        const grades = fetchedGrades.status === 'fulfilled' ? fetchedGrades.value || [] : [];
-        const hours = fetchedHours.status === 'fulfilled' ? fetchedHours.value || [] : [];
+        // Procesar resultados combinando cache y datos frescos
+        let users = cachedUsers || [];
+        let resources = cachedResources || [];
+        let categories = cachedCategories || [];
+        let areas = cachedAreas || [];
+        let grades = cachedGrades || [];
+        let loans: Loan[] = [];
+        let reservations: Reservation[] = [];
+        let meetings: Meeting[] = [];
+        let hours: PedagogicalHour[] = [];
+
+        // Procesar resultados de las promesas y actualizar cache
+        results.forEach((result, index) => {
+          if (result.status === 'fulfilled') {
+            const data = result.value || [];
+            
+            // Determinar qué tipo de datos son basándose en el promiseMap
+            for (const [key, promiseIdx] of Object.entries(promiseMap)) {
+              if (promiseIdx === index) {
+                switch (key) {
+                  case 'users':
+                    users = data;
+                    setCachedData('users', data);
+                    break;
+                  case 'resources':
+                    resources = data;
+                    setCachedData('resources', data);
+                    break;
+                  case 'categories':
+                    categories = data;
+                    setCachedData('categories', data);
+                    break;
+                  case 'areas':
+                    areas = data;
+                    setCachedData('areas', data);
+                    break;
+                  case 'grades':
+                    grades = data;
+                    setCachedData('grades', data);
+                    break;
+                  case 'loans':
+                    loans = data;
+                    break;
+                  case 'reservations':
+                    reservations = data;
+                    break;
+                  case 'meetings':
+                    meetings = data;
+                    break;
+                  case 'pedagogicalHours':
+                    hours = data;
+                    break;
+                }
+                break;
+              }
+            }
+          }
+        });
         
         if (isMounted) {
           console.log('DataProvider: Procesando datos cargados', {
@@ -884,8 +1005,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       
       // Cargar todos los datos en paralelo usando Promise.allSettled
       const dataPromise = Promise.allSettled([
-        getUsers(),
-        resourceService.getResources(),
+        getUsers(100, 0),
+        resourceService.getResources(200, 0),
         resourceService.getCategories(),
         loanService.getLoans(),
         reservationService.getReservations(),

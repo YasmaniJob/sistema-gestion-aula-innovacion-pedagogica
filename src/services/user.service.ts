@@ -20,13 +20,33 @@ import type { LoanUser } from '@/domain/types';
 import { supabase, supabaseAdmin } from '@/infrastructure/supabase/client';
 
 /**
- * Fetches all users from the database.
+ * Fetches users from the database with optional pagination and optimization.
+ * @param limit - Maximum number of users to fetch (default: 100 for performance)
+ * @param offset - Number of users to skip (default: 0)
  * @returns A promise that resolves to an array of users.
  */
-export async function getUsers(): Promise<LoanUser[]> {
-    const { data, error } = await supabase.from('users').select('*');
+export async function getUsers(limit: number = 100, offset: number = 0): Promise<LoanUser[]> {
+    const { data, error } = await supabase
+        .from('users')
+        .select('id, name, email, role, created_at')
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1);
+    
     if (error) {
         console.error('Error fetching users:', error);
+        return [];
+    }
+    return data as LoanUser[];
+}
+
+/**
+ * Fetches all users from the database (use with caution for large datasets).
+ * @returns A promise that resolves to an array of users.
+ */
+export async function getAllUsers(): Promise<LoanUser[]> {
+    const { data, error } = await supabase.from('users').select('*');
+    if (error) {
+        console.error('Error fetching all users:', error);
         return [];
     }
     return data as LoanUser[];

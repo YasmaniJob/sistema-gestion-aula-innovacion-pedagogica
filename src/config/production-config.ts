@@ -136,7 +136,7 @@ class ProductionConfigService {
         api: this.getEnvNumber('API_TIMEOUT', 5000),
         dbQuery: this.getEnvNumber('DB_QUERY_TIMEOUT', 3000),
         request: this.getEnvNumber('REQUEST_TIMEOUT', 10000),
-        dataLoad: this.getEnvNumber('DATA_LOAD_TIMEOUT', this.isProduction ? 30000 : 15000)
+        dataLoad: this.getEnvNumber('DATA_LOAD_TIMEOUT', this.isProduction ? 30000 : 45000)
       },
       vercel: {
         enabled: this.getEnvBoolean('VERCEL', false) || this.getEnvBoolean('NEXT_PUBLIC_VERCEL_ENV', false),

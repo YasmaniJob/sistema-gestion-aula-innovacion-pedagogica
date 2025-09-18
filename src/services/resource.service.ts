@@ -20,17 +20,61 @@ export async function getCategories(): Promise<Category[]> {
 }
 
 /**
- * Fetches all resources from the database and maps their category.
+ * Fetches resources from the database with optimization and optional pagination.
+ * @param limit - Maximum number of resources to fetch (default: 200 for performance)
+ * @param offset - Number of resources to skip (default: 0)
  * @returns A promise that resolves to an array of resources.
  */
-export async function getResources(): Promise<Resource[]> {
+export async function getResources(limit: number = 200, offset: number = 0): Promise<Resource[]> {
+    const { data, error } = await supabase
+        .from('resources')
+        .select(`
+            id,
+            name,
+            brand,
+            model,
+            status,
+            stock,
+            damage_notes,
+            attributes,
+            notes,
+            categories ( name )
+        `)
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1);
+
+    if (error) {
+        console.error('Error fetching resources:', error);
+        return [];
+    }
+    
+    // Transform the data to match the Resource domain type
+    return data.map((r: any) => ({
+        id: r.id,
+        name: r.name,
+        brand: r.brand,
+        model: r.model,
+        status: r.status,
+        stock: r.stock,
+        damageNotes: r.damage_notes,
+        category: r.categories?.name || 'Sin categoría', // Handle null category
+        attributes: r.attributes,
+        notes: r.notes,
+    }));
+}
+
+/**
+ * Fetches all resources from the database (use with caution for large datasets).
+ * @returns A promise that resolves to an array of resources.
+ */
+export async function getAllResources(): Promise<Resource[]> {
     const { data, error } = await supabase.from('resources').select(`
         *,
         categories ( name )
     `);
 
     if (error) {
-        console.error('Error fetching resources:', error);
+        console.error('Error fetching all resources:', error);
         return [];
     }
     

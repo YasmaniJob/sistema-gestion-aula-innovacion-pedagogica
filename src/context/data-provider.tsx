@@ -325,8 +325,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         console.log('Loading app data...');
         
         const [fetchedUsers, fetchedResources, fetchedCategories, fetchedLoans, fetchedReservations, fetchedMeetings, fetchedAreas, fetchedGrades, fetchedHours] = await Promise.allSettled([
-          withCache(CacheKeys.USERS, () => getUsers(), CacheConfigs.USERS),
-          withCache(CacheKeys.RESOURCES, () => resourceService.getResources(), CacheConfigs.RESOURCES),
+          withCache(CacheKeys.USERS, () => getUsers(100, 0), CacheConfigs.USERS),
+          withCache(CacheKeys.RESOURCES, () => resourceService.getResources(200, 0), CacheConfigs.RESOURCES),
           withCache(CacheKeys.CATEGORIES, () => resourceService.getCategories(), CacheConfigs.CATEGORIES),
           withCache(CacheKeys.LOANS, () => loanService.getLoans(), CacheConfigs.LOANS),
           withCache(CacheKeys.RESERVATIONS, () => reservationService.getReservations(), CacheConfigs.RESERVATIONS),
@@ -707,7 +707,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   const refreshResources = useCallback(async () => {
     localCache.invalidate(CacheKeys.RESOURCES);
-    const fetchedResources = await withCache(CacheKeys.RESOURCES, () => resourceService.getResources(), CacheConfigs.RESOURCES);
+    const fetchedResources = await withCache(CacheKeys.RESOURCES, () => resourceService.getResources(200, 0), CacheConfigs.RESOURCES);
     setResources(fetchedResources || []);
   }, []);
 
