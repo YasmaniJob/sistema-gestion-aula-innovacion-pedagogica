@@ -21,6 +21,7 @@ import {
   MessageCircle,
   BookOpen,
   Plug,
+  Zap,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -65,13 +66,16 @@ export default function NewLoanPage() {
     availableAccessories,
     selectedAccessories,
     suggestedAccessories,
+    chargerIncluded,
+    availableChargers,
     toggleAccessory,
+    toggleCharger,
     clearAccessories,
     selectAllSuggested,
   } = useAccessorySelection({
     selectedResources,
     allResources,
-    autoSelectChargers: true,
+    autoSelectChargers: false, // Cambiado a false para usar el switch manual
   });
   const [activeCategory, setActiveCategory] = useState<string>('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -172,7 +176,11 @@ export default function NewLoanPage() {
       purposeDetails: loanPurpose === 'aprendizaje' 
         ? { area: selectedArea, grade: selectedGrade, section: selectedSection, activityName: `${selectedArea} - ${selectedGrade} ${selectedSection}` }
         : { activityName: internalUsageDetails },
-      resources: [...selectedResources, ...selectedAccessories].map(r => ({ id: r.id, name: r.name, brand: r.brand })),
+      resources: [
+        ...selectedResources, 
+        ...selectedAccessories,
+        ...(chargerIncluded ? availableChargers.slice(0, 1) : []) // Incluir el primer cargador disponible si está marcado
+      ].map(r => ({ id: r.id, name: r.name, brand: r.brand })),
     };
 
     await addLoan(newLoanData, currentUser.role);
@@ -386,7 +394,10 @@ export default function NewLoanPage() {
                 )}
                 availableAccessories={availableAccessories}
                 selectedAccessories={selectedAccessories}
+                chargerIncluded={chargerIncluded}
+                availableChargers={availableChargers}
                 onAccessoryToggle={toggleAccessory}
+                onChargerToggle={toggleCharger}
               />
             </CardContent>
           </Card>
@@ -449,6 +460,21 @@ export default function NewLoanPage() {
                   )}
                 </div>
               </div>
+              
+              {chargerIncluded && (
+                <div>
+                  <h4 className="font-medium text-sm mb-2">Cargador Incluido</h4>
+                  <div className="p-2 rounded-md bg-green-50 border border-green-200">
+                    <div className="flex items-center gap-2">
+                      <Zap className="h-4 w-4 text-green-600" />
+                      <div>
+                        <p className="text-sm font-medium">Cargador</p>
+                        <p className="text-xs text-muted-foreground">Se incluye cargador compatible</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
               
               {selectedAccessories.length > 0 && (
                 <div>

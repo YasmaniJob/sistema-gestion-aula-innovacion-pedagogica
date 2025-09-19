@@ -28,7 +28,7 @@ import { supabase, supabaseAdmin } from '@/infrastructure/supabase/client';
 export async function getUsers(limit: number = 100, offset: number = 0): Promise<LoanUser[]> {
     const { data, error } = await supabase
         .from('users')
-        .select('id, name, email, role, created_at')
+        .select('id, name, email, role, dni, created_at')
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1);
     

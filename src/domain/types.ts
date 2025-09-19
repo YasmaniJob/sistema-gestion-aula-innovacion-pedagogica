@@ -47,6 +47,14 @@ export type SuggestionReport = {
     otherNotes: string;
 }
 
+export type MissingResourceReport = {
+    resourceId: string;
+    resourceName: string;
+    resourceBrand?: string;
+    reportDate: Date;
+    notes?: string;
+}
+
 export type Loan = {
     id: string;
     user: LoanUser;
@@ -64,6 +72,7 @@ export type Loan = {
     resources: Pick<Resource, 'id' | 'name' | 'brand'>[];
     damageReports?: Record<string, DamageReport>;
     suggestionReports?: Record<string, SuggestionReport>;
+    missingResources?: MissingResourceReport[];
 }
 
 export type ReservationStatus = 'Confirmada' | 'Realizada' | 'No asistió' | 'Cancelada';

@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Check, XCircle, Loader2 } from 'lucide-react';
+import { Check, XCircle, Loader2, Zap } from 'lucide-react';
 import { getInitials } from '@/lib/utils';
 
 type PendingLoanCardProps = {
@@ -47,11 +47,66 @@ export function PendingLoanCard({ loan, onApprove, onReject, isProcessing }: Pen
                     Recursos Solicitados ({loan.resources.length})
                 </p>
                 <div className="flex flex-wrap gap-2">
-                    {loan.resources.map((resource) => (
-                        <Badge key={resource.id} variant="secondary" className="font-normal">
-                            {resource.name} ({resource.brand})
-                        </Badge>
-                    ))}
+                    {(() => {
+                        // Separar recursos principales de cargadores
+                        const mainResources = loan.resources.filter(resource => 
+                            !resource.name.toLowerCase().includes('cargador') && 
+                            !resource.name.toLowerCase().includes('charger') &&
+                            !resource.name.toLowerCase().includes('adaptador de corriente')
+                        );
+                        const chargers = loan.resources.filter(resource => 
+                            resource.name.toLowerCase().includes('cargador') || 
+                            resource.name.toLowerCase().includes('charger') ||
+                            resource.name.toLowerCase().includes('adaptador de corriente')
+                        );
+                        
+                        const elements = [];
+                        
+                        // Mostrar recursos principales
+                        mainResources.forEach((resource) => {
+                            // Verificar si hay cargadores para este recurso principal
+                            const hasCharger = chargers.length > 0 && (
+                                resource.category === 'Laptops' || resource.category === 'Tablets' ||
+                                resource.name.toLowerCase().includes('laptop') || resource.name.toLowerCase().includes('tablet')
+                            );
+                            
+                            elements.push(
+                                <Badge key={resource.id} variant="secondary" className="font-normal">
+                                    {resource.name} ({resource.brand})
+                                </Badge>
+                            );
+                            
+                            // Agregar badge separado para el cargador si existe
+                             if (hasCharger) {
+                                 elements.push(
+                                     <Badge key={`${resource.id}-charger`} variant="secondary" className="font-normal">
+                                         <Zap className="h-4 w-4 mr-2" />
+                                         Cargador
+                                     </Badge>
+                                 );
+                             }
+                        });
+                        
+                        // Mostrar cargadores independientes (que no están asociados a laptops/tablets)
+                        chargers.forEach((charger) => {
+                            const hasMainResource = mainResources.some(resource => 
+                                resource.category === 'Laptops' || resource.category === 'Tablets' ||
+                                resource.name.toLowerCase().includes('laptop') || resource.name.toLowerCase().includes('tablet')
+                            );
+                            
+                            // Solo mostrar cargadores independientes si no hay recursos principales que los incluyan
+                            if (!hasMainResource) {
+                                elements.push(
+                                    <Badge key={charger.id} variant="secondary" className="font-normal">
+                                        <Zap className="h-4 w-4 mr-2" />
+                                        {charger.name} ({charger.brand})
+                                    </Badge>
+                                );
+                            }
+                        });
+                        
+                        return elements;
+                    })()}
                 </div>
             </CardContent>
         </Card>

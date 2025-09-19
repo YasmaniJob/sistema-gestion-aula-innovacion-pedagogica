@@ -126,6 +126,7 @@ export type Database = {
             resources: Json | null;
             damage_reports: Json | null;
             suggestion_reports: Json | null;
+            missing_resources: Json | null;
         };
         Insert: {
             id?: string;
@@ -138,6 +139,7 @@ export type Database = {
             resources?: Json | null;
             damage_reports?: Json | null;
             suggestion_reports?: Json | null;
+            missing_resources?: Json | null;
         };
         Update: {
             id?: string;
@@ -150,6 +152,7 @@ export type Database = {
             resources?: Json | null;
             damage_reports?: Json | null;
             suggestion_reports?: Json | null;
+            missing_resources?: Json | null;
         };
         Relationships: [
           {

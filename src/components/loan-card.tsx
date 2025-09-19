@@ -20,6 +20,7 @@ import {
   CheckCircle,
   Clock,
   XCircle,
+  Zap,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { format, isBefore, startOfDay, differenceInDays } from 'date-fns';
@@ -196,30 +197,101 @@ export function LoanCard({ loan, isTeacherContext = false, onViewIncidents }: Lo
             Recursos ({loan.resources.length})
           </p>
           <div className="flex flex-wrap gap-2">
-            {loan.resources.map((resource) => {
-              const damages = hasDamageReports(resource.id);
-              const suggestions = hasSuggestionReports(resource.id);
-              return (
-                <Badge key={resource.id} variant="secondary" className="font-normal py-1 pr-3">
-                  <Camera className="h-4 w-4 mr-2" />
-                  {resource.name}
-                  {(damages || suggestions) && onViewIncidents && (
-                      <div className="flex items-center gap-1.5 ml-2 pl-2 border-l border-border">
-                          {damages && (
-                              <button onClick={() => onViewIncidents(loan, resource)} aria-label="Ver reporte de daños">
-                                <ShieldAlert className="h-4 w-4 text-destructive" />
-                              </button>
-                          )}
-                          {suggestions && (
-                               <button onClick={() => onViewIncidents(loan, resource)} aria-label="Ver reporte de sugerencias">
-                                <MessageSquarePlus className="h-4 w-4 text-amber-600" />
-                               </button>
-                          )}
-                      </div>
-                  )}
-                </Badge>
-              )
-            })}
+            {(() => {
+              // Separar recursos principales de cargadores
+              const mainResources = loan.resources.filter(resource => 
+                !resource.name.toLowerCase().includes('cargador') && 
+                !resource.name.toLowerCase().includes('charger') &&
+                !resource.name.toLowerCase().includes('adaptador de corriente')
+              );
+              const chargers = loan.resources.filter(resource => 
+                resource.name.toLowerCase().includes('cargador') || 
+                resource.name.toLowerCase().includes('charger') ||
+                resource.name.toLowerCase().includes('adaptador de corriente')
+              );
+              
+              const elements = [];
+              
+              // Mostrar recursos principales
+              mainResources.forEach((resource) => {
+                const damages = hasDamageReports(resource.id);
+                const suggestions = hasSuggestionReports(resource.id);
+                
+                // Verificar si hay cargadores para este recurso principal
+                const hasCharger = chargers.length > 0 && (
+                  resource.category === 'Laptops' || resource.category === 'Tablets' ||
+                  resource.name.toLowerCase().includes('laptop') || resource.name.toLowerCase().includes('tablet')
+                );
+                
+                elements.push(
+                  <Badge key={resource.id} variant="secondary" className="font-normal py-1 pr-3">
+                    <Camera className="h-4 w-4 mr-2" />
+                    {resource.name}
+                    {(damages || suggestions) && onViewIncidents && (
+                        <div className="flex items-center gap-1.5 ml-2 pl-2 border-l border-border">
+                            {damages && (
+                                <button onClick={() => onViewIncidents(loan, resource)} aria-label="Ver reporte de daños">
+                                  <ShieldAlert className="h-4 w-4 text-destructive" />
+                                </button>
+                            )}
+                            {suggestions && (
+                                 <button onClick={() => onViewIncidents(loan, resource)} aria-label="Ver reporte de sugerencias">
+                                  <MessageSquarePlus className="h-4 w-4 text-amber-600" />
+                                 </button>
+                            )}
+                        </div>
+                    )}
+                  </Badge>
+                );
+                
+                // Agregar badge separado para el cargador si existe
+                if (hasCharger) {
+                  elements.push(
+                    <Badge key={`${resource.id}-charger`} variant="secondary" className="font-normal py-1 pr-3">
+                      <Zap className="h-4 w-4 mr-2" />
+                      Cargador
+                    </Badge>
+                  );
+                }
+              });
+              
+              // Mostrar cargadores independientes (que no están asociados a laptops/tablets)
+              chargers.forEach((charger) => {
+                const hasMainResource = mainResources.some(resource => 
+                  resource.category === 'Laptops' || resource.category === 'Tablets' ||
+                  resource.name.toLowerCase().includes('laptop') || resource.name.toLowerCase().includes('tablet')
+                );
+                
+                // Solo mostrar cargadores independientes si no hay recursos principales que los incluyan
+                if (!hasMainResource) {
+                  const damages = hasDamageReports(charger.id);
+                  const suggestions = hasSuggestionReports(charger.id);
+                  
+                  elements.push(
+                    <Badge key={charger.id} variant="secondary" className="font-normal py-1 pr-3">
+                      <Zap className="h-4 w-4 mr-2" />
+                      {charger.name}
+                      {(damages || suggestions) && onViewIncidents && (
+                          <div className="flex items-center gap-1.5 ml-2 pl-2 border-l border-border">
+                              {damages && (
+                                  <button onClick={() => onViewIncidents(loan, charger)} aria-label="Ver reporte de daños">
+                                    <ShieldAlert className="h-4 w-4 text-destructive" />
+                                  </button>
+                              )}
+                              {suggestions && (
+                                   <button onClick={() => onViewIncidents(loan, charger)} aria-label="Ver reporte de sugerencias">
+                                    <MessageSquarePlus className="h-4 w-4 text-amber-600" />
+                                   </button>
+                              )}
+                          </div>
+                      )}
+                    </Badge>
+                  );
+                }
+              });
+              
+              return elements;
+            })()}
           </div>
         </div>
       </CardContent>

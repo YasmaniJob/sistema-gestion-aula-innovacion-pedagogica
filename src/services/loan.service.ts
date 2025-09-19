@@ -2,7 +2,7 @@
 
 'use server';
 
-import type { Loan, Resource, DamageReport, SuggestionReport, LoanUser } from '@/domain/types';
+import type { Loan, Resource, DamageReport, SuggestionReport, MissingResourceReport, LoanUser } from '@/domain/types';
 import { supabase, supabaseAdmin } from '@/infrastructure/supabase/client';
 
 const isValidDate = (d: any): d is Date => d instanceof Date && !isNaN(d.getTime());
@@ -213,7 +213,8 @@ export async function updateLoanStatus(
 export async function processReturn(
   loanId: string,
   damageReports: Record<string, DamageReport>,
-  suggestionReports: Record<string, SuggestionReport>
+  suggestionReports: Record<string, SuggestionReport>,
+  missingResources?: MissingResourceReport[]
 ): Promise<{ updatedLoan: Loan, updatedResources: Resource[] } | null> {
     
     if (!supabaseAdmin) {
@@ -238,7 +239,8 @@ export async function processReturn(
             status: 'returned',
             return_date: getCurrentDate().toISOString(),
             damage_reports: damageReports,
-            suggestion_reports: suggestionReports
+            suggestion_reports: suggestionReports,
+            missing_resources: missingResources || []
         })
         .eq('id', loanId)
         .select()

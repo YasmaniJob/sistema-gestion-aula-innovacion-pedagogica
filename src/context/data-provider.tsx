@@ -3,7 +3,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import type { Loan, LoanUser, Resource, Category, Reservation, Meeting, Section, Grade, PedagogicalHour, Area, DamageReport, SuggestionReport, AgreementTask } from '@/domain/types';
+import type { Loan, LoanUser, Resource, Category, Reservation, Meeting, Section, Grade, PedagogicalHour, Area, DamageReport, SuggestionReport, MissingResourceReport, AgreementTask } from '@/domain/types';
 import { useToast } from '@/hooks/use-toast';
 import { localCache, withCache, CacheKeys, CacheConfigs } from '@/services/local-cache.service';
 import { 
@@ -67,7 +67,7 @@ interface DataContextType {
   addLoan: (newLoan: Omit<Loan, 'id' | 'loanDate' | 'status'>, creatorRole: LoanUser['role']) => Promise<void>;
   approveLoan: (loanId: string) => Promise<void>;
   rejectLoan: (loanId: string) => Promise<void>;
-  processReturn: (loanId: string, damageReports: Record<string, DamageReport>, suggestionReports: Record<string, SuggestionReport>) => Promise<void>;
+  processReturn: (loanId: string, damageReports: Record<string, DamageReport>, suggestionReports: Record<string, SuggestionReport>, missingResources?: MissingResourceReport[]) => Promise<void>;
 
   addResource: (data: Omit<Resource, 'id' | 'name' | 'stock'> & { quantity: number }) => Promise<void>;
   updateResource: (resourceId: string, data: Partial<Omit<Resource, 'id'>>) => Promise<void>;
@@ -658,8 +658,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       }
   }, []);
 
-  const processReturn = useCallback(async (loanId: string, damageReports: Record<string, DamageReport>, suggestionReports: Record<string, SuggestionReport>) => {
-      const result = await loanService.processReturn(loanId, damageReports, suggestionReports);
+  const processReturn = useCallback(async (loanId: string, damageReports: Record<string, DamageReport>, suggestionReports: Record<string, SuggestionReport>, missingResources?: MissingResourceReport[]) => {
+      const result = await loanService.processReturn(loanId, damageReports, suggestionReports, missingResources);
       if (result) {
         const { updatedLoan, updatedResources } = result;
 

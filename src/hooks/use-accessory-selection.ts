@@ -13,7 +13,10 @@ type UseAccessorySelectionReturn = {
   availableAccessories: Resource[];
   selectedAccessories: Resource[];
   suggestedAccessories: Resource[];
+  chargerIncluded: boolean;
+  availableChargers: Resource[];
   toggleAccessory: (accessory: Resource) => void;
+  toggleCharger: () => void;
   clearAccessories: () => void;
   selectAllSuggested: () => void;
 };
@@ -24,6 +27,7 @@ export function useAccessorySelection({
   autoSelectChargers = true,
 }: UseAccessorySelectionProps): UseAccessorySelectionReturn {
   const [selectedAccessories, setSelectedAccessories] = useState<Resource[]>([]);
+  const [chargerIncluded, setChargerIncluded] = useState<boolean>(false);
 
   // Filtrar recursos principales (laptops, proyectores)
   const mainResources = useMemo(() => {
@@ -86,30 +90,58 @@ export function useAccessorySelection({
     });
   }, [mainResources, allResources, selectedResources]);
 
-  // Obtener accesorios sugeridos (cargadores principalmente)
-  const suggestedAccessories = useMemo(() => {
-    if (!autoSelectChargers || mainResources.length === 0) return [];
+  // Obtener cargadores disponibles para el switch
+  const availableChargers = useMemo(() => {
+    if (mainResources.length === 0) return [];
 
     return availableAccessories.filter(accessory => {
-      // Priorizar cargadores
       const isCharger = accessory.name.toLowerCase().includes('cargador') || 
-                       accessory.name.toLowerCase().includes('charger');
+                       accessory.name.toLowerCase().includes('charger') ||
+                       accessory.name.toLowerCase().includes('adaptador de corriente') ||
+                       accessory.name.toLowerCase().includes('fuente de poder');
       
       if (isCharger) {
-        // Sugerir cargadores que coincidan por marca
         return mainResources.some(mainResource => {
+          // Coincidencia por marca
           if (accessory.brand && mainResource.brand && 
               accessory.brand.toLowerCase() === mainResource.brand.toLowerCase()) {
             return true;
           }
           
-          // También sugerir si hay coincidencia en el nombre
-          const accessoryName = accessory.name.toLowerCase();
-          const mainResourceName = mainResource.name.toLowerCase();
+          // Coincidencia por modelo o palabras clave
+          const resourceKeywords = accessory.name.toLowerCase().split(/[\s-_]+/);
+          const mainResourceKeywords = mainResource.name.toLowerCase().split(/[\s-_]+/);
           
-          return accessoryName.includes(mainResource.brand?.toLowerCase() || '') ||
-                 mainResourceName.includes(accessory.brand?.toLowerCase() || '');
+          return resourceKeywords.some(keyword => {
+            if (keyword.length < 3) return false;
+            return mainResourceKeywords.some(mainKeyword => 
+              keyword.includes(mainKeyword) || mainKeyword.includes(keyword)
+            );
+          });
         });
+      }
+
+      return false;
+    });
+  }, [availableAccessories, mainResources]);
+
+  // Obtener accesorios sugeridos (excluyendo cargadores que ahora se manejan por separado)
+  const suggestedAccessories = useMemo(() => {
+    if (!autoSelectChargers || mainResources.length === 0) return [];
+
+    return availableAccessories.filter(accessory => {
+      // Excluir cargadores ya que se manejan por separado
+      const isCharger = accessory.name.toLowerCase().includes('cargador') || 
+                       accessory.name.toLowerCase().includes('charger');
+      
+      if (isCharger) return false;
+
+      // Incluir otros accesorios sugeridos
+      if (accessory.isAccessory) {
+        return mainResources.some(mainResource => 
+          accessory.compatibleWith?.includes(mainResource.id) ||
+          mainResource.relatedAccessories?.includes(accessory.id)
+        );
       }
 
       return false;
@@ -126,10 +158,23 @@ export function useAccessorySelection({
     }
   }, [suggestedAccessories, autoSelectChargers, selectedAccessories.length]);
 
-  // Limpiar accesorios seleccionados cuando no hay recursos principales
+  // Auto-activar el switch de cargador cuando hay dispositivos que requieren cargador
+  useEffect(() => {
+    if (autoSelectChargers) {
+      const hasDevicesWithCharger = mainResources.some(resource => 
+        resource.category === 'Laptops' || resource.category === 'Tablets' || resource.category === 'Proyectores'
+      );
+      if (hasDevicesWithCharger && !chargerIncluded) {
+        setChargerIncluded(true);
+      }
+    }
+  }, [mainResources, autoSelectChargers, chargerIncluded]);
+
+  // Limpiar accesorios y cargador cuando no hay recursos principales
   useEffect(() => {
     if (mainResources.length === 0) {
       setSelectedAccessories([]);
+      setChargerIncluded(false);
     }
   }, [mainResources.length]);
 
@@ -145,8 +190,13 @@ export function useAccessorySelection({
     });
   };
 
+  const toggleCharger = () => {
+    setChargerIncluded(prev => !prev);
+  };
+
   const clearAccessories = () => {
     setSelectedAccessories([]);
+    setChargerIncluded(false);
   };
 
   const selectAllSuggested = () => {
@@ -157,7 +207,10 @@ export function useAccessorySelection({
     availableAccessories,
     selectedAccessories,
     suggestedAccessories,
+    chargerIncluded,
+    availableChargers,
     toggleAccessory,
+    toggleCharger,
     clearAccessories,
     selectAllSuggested,
   };
