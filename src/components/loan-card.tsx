@@ -21,6 +21,7 @@ import {
   Clock,
   XCircle,
   Zap,
+  PackageX,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { format, isBefore, startOfDay, differenceInDays } from 'date-fns';
@@ -114,6 +115,10 @@ export function LoanCard({ loan, isTeacherContext = false, onViewIncidents }: Lo
   const hasSuggestionReports = (resourceId: string) => {
     const report = loan.suggestionReports?.[resourceId];
     return report && (report.commonSuggestions.length > 0 || (report.otherNotes || '').trim() !== '');
+  };
+
+  const hasMissingResources = (resourceId: string) => {
+    return loan.missingResources?.some(missing => missing.resourceId === resourceId) || false;
   };
 
   const statusBadge = () => {
@@ -216,6 +221,7 @@ export function LoanCard({ loan, isTeacherContext = false, onViewIncidents }: Lo
               mainResources.forEach((resource) => {
                 const damages = hasDamageReports(resource.id);
                 const suggestions = hasSuggestionReports(resource.id);
+                const missing = hasMissingResources(resource.id);
                 
                 // Verificar si hay cargadores para este recurso principal
                 const hasCharger = chargers.length > 0 && (
@@ -227,7 +233,7 @@ export function LoanCard({ loan, isTeacherContext = false, onViewIncidents }: Lo
                   <Badge key={resource.id} variant="secondary" className="font-normal py-1 pr-3">
                     <Camera className="h-4 w-4 mr-2" />
                     {resource.name}
-                    {(damages || suggestions) && onViewIncidents && (
+                    {(damages || suggestions || missing) && onViewIncidents && (
                         <div className="flex items-center gap-1.5 ml-2 pl-2 border-l border-border">
                             {damages && (
                                 <button onClick={() => onViewIncidents(loan, resource)} aria-label="Ver reporte de daños">
@@ -237,6 +243,11 @@ export function LoanCard({ loan, isTeacherContext = false, onViewIncidents }: Lo
                             {suggestions && (
                                  <button onClick={() => onViewIncidents(loan, resource)} aria-label="Ver reporte de sugerencias">
                                   <MessageSquarePlus className="h-4 w-4 text-amber-600" />
+                                 </button>
+                            )}
+                            {missing && (
+                                 <button onClick={() => onViewIncidents(loan, resource)} aria-label="Ver recursos faltantes">
+                                  <PackageX className="h-4 w-4 text-orange-600" />
                                  </button>
                             )}
                         </div>
@@ -266,12 +277,13 @@ export function LoanCard({ loan, isTeacherContext = false, onViewIncidents }: Lo
                 if (!hasMainResource) {
                   const damages = hasDamageReports(charger.id);
                   const suggestions = hasSuggestionReports(charger.id);
+                  const missing = hasMissingResources(charger.id);
                   
                   elements.push(
                     <Badge key={charger.id} variant="secondary" className="font-normal py-1 pr-3">
                       <Zap className="h-4 w-4 mr-2" />
                       {charger.name}
-                      {(damages || suggestions) && onViewIncidents && (
+                      {(damages || suggestions || missing) && onViewIncidents && (
                           <div className="flex items-center gap-1.5 ml-2 pl-2 border-l border-border">
                               {damages && (
                                   <button onClick={() => onViewIncidents(loan, charger)} aria-label="Ver reporte de daños">
@@ -281,6 +293,11 @@ export function LoanCard({ loan, isTeacherContext = false, onViewIncidents }: Lo
                               {suggestions && (
                                    <button onClick={() => onViewIncidents(loan, charger)} aria-label="Ver reporte de sugerencias">
                                     <MessageSquarePlus className="h-4 w-4 text-amber-600" />
+                                   </button>
+                              )}
+                              {missing && (
+                                   <button onClick={() => onViewIncidents(loan, charger)} aria-label="Ver recursos faltantes">
+                                    <PackageX className="h-4 w-4 text-orange-600" />
                                    </button>
                               )}
                           </div>

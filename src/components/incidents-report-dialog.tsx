@@ -14,7 +14,7 @@ import { es } from 'date-fns/locale';
 
 const isValidDate = (d: any): d is Date => d instanceof Date && !isNaN(d.getTime());
 import { Card, CardContent } from './ui/card';
-import { GraduationCap, ShieldAlert, User, MessageSquarePlus, CircleDotDashed } from 'lucide-react';
+import { GraduationCap, ShieldAlert, User, MessageSquarePlus, CircleDotDashed, PackageX } from 'lucide-react';
 import { reportLabels } from '@/domain/constants';
 
 type IncidentsReportDialogProps = {
@@ -36,6 +36,7 @@ export function IncidentsReportDialog({
 
     const damageReport = loan.damageReports?.[resource.id];
     const suggestionReport = loan.suggestionReports?.[resource.id];
+    const missingResource = loan.missingResources?.find(missing => missing.resourceId === resource.id);
 
     const damageItems = [
         ...(damageReport?.commonProblems || []),
@@ -139,7 +140,29 @@ export function IncidentsReportDialog({
                              </div>
                            )}
 
-                           {damageItems.length === 0 && suggestionItems.length === 0 && (
+                           {missingResource && (
+                             <div className="space-y-3">
+                                 <h4 className="font-semibold flex items-center gap-2 text-orange-600">
+                                    <PackageX/> Recurso No Devuelto
+                                 </h4>
+                                <div className="pl-4 border-l-2 border-orange-500 space-y-3">
+                                    <div className="p-3 bg-orange-500/10 rounded-r-lg">
+                                        <p className="font-bold text-sm text-orange-700">Recurso Faltante</p>
+                                        <p className="text-xs text-orange-700/80 mb-2">
+                                            Este recurso no fue devuelto durante el proceso de devolución del préstamo.
+                                        </p>
+                                        <div className="text-xs text-orange-700/80 space-y-1">
+                                            <p><strong>Fecha de reporte:</strong> {format(new Date(missingResource.reportDate), 'dd/MM/yyyy HH:mm', { locale: es })}</p>
+                                            {missingResource.notes && (
+                                                <p><strong>Notas:</strong> {missingResource.notes}</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                             </div>
+                           )}
+
+                           {damageItems.length === 0 && suggestionItems.length === 0 && !missingResource && (
                                 <p className="text-sm text-muted-foreground text-center py-4">No se reportaron incidencias para este recurso.</p>
                            )}
                         </CardContent>

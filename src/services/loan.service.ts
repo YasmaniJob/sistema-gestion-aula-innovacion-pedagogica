@@ -21,6 +21,7 @@ export async function getLoans(): Promise<any[]> {
     const { data: loanData, error: loanError } = await supabase
         .from('loans')
         .select('*') 
+        .order('return_date', { ascending: false, nullsFirst: false })
         .order('loan_date', { ascending: false });
 
     if (loanError) {
@@ -38,6 +39,7 @@ export async function getLoans(): Promise<any[]> {
             purposeDetails: loan.purpose_details || {},
             damageReports: loan.damage_reports || {},
             suggestionReports: loan.suggestion_reports || {},
+            missingResources: loan.missing_resources || [],
         }
     });
     
