@@ -100,7 +100,7 @@ export default function NewReservationPage() {
         
         const newReservationsData = selectedSlots.map(slot => {
             const [dateStr, time] = slot.split('T');
-            const startTime = parseISO(`${dateStr}T00:00:00.000Z`); // Time part is handled by purposeDetails
+            const startTime = parseISO(`${dateStr}T00:00:00`); // Time part is handled by purposeDetails
             
             return {
                 user: selectedUser,

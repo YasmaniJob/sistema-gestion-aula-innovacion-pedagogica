@@ -64,34 +64,169 @@ export default function ReservationsPage() {
 
   const handleExportPDF = () => {
     const doc = new jsPDF();
-    const tableData = weeklyReservations.map(res => [
-        format(res.startTime, "dd/MM/yy", { locale: es }),
-        res.purposeDetails?.activityName,
-        res.user.name,
-        res.purposeDetails?.activityName,
-        res.status,
-    ]);
     
+    // Configuración de colores
+    const primaryColor = [41, 128, 185]; // Azul
+    const secondaryColor = [52, 152, 219]; // Azul claro
+    const accentColor = [46, 204, 113]; // Verde
+    const textColor = [44, 62, 80]; // Gris oscuro
+    
+    // Encabezado del documento
+    doc.setFillColor(...primaryColor);
+    doc.rect(0, 0, 210, 35, 'F');
+    
+    // Título principal
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.text('REPORTE DE RESERVAS', 14, 20);
+    
+    // Subtítulo con rango de fechas
     const weekRangeText = `Semana del ${format(weekStart, 'd')} al ${format(weekEnd, "d 'de' MMMM, yyyy", { locale: es })}`;
-
-    doc.setFontSize(18);
-    doc.text(`Reporte de Reservas`, 14, 22);
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.text(weekRangeText, 14, 28);
+    
+    // Fecha de generación
+    doc.setFontSize(10);
+    doc.text(`Generado el: ${format(new Date(), "dd/MM/yyyy 'a las' HH:mm", { locale: es })}`, 14, 32);
+    
+    // Estadísticas resumidas
+    doc.setTextColor(...textColor);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Resumen Ejecutivo', 14, 50);
+    
+    const stats = {
+      total: weeklyReservations.length,
+      confirmadas: weeklyReservations.filter(r => r.status === 'Confirmada').length,
+      completadas: weeklyReservations.filter(r => r.status === 'Completada').length,
+      canceladas: weeklyReservations.filter(r => r.status === 'Cancelada').length,
+      aprendizaje: weeklyReservations.filter(r => r.purpose === 'aprendizaje').length,
+      institucional: weeklyReservations.filter(r => r.purpose === 'institucional').length
+    };
+    
     doc.setFontSize(11);
-    doc.text(weekRangeText, 14, 30);
-
-    (doc as any).autoTable({
-        startY: 36,
-        head: [['Fecha', 'Hora', 'Docente', 'Actividad', 'Estado']],
-        body: tableData,
-        theme: 'striped',
-        headStyles: { fillColor: [41, 128, 185], textColor: 255 },
+    doc.setFont('helvetica', 'normal');
+    let yPos = 58;
+    
+    // Estadísticas en dos columnas
+    doc.text(`• Total de reservas: ${stats.total}`, 14, yPos);
+    doc.text(`• Reservas confirmadas: ${stats.confirmadas}`, 110, yPos);
+    yPos += 6;
+    doc.text(`• Reservas completadas: ${stats.completadas}`, 14, yPos);
+    doc.text(`• Reservas canceladas: ${stats.canceladas}`, 110, yPos);
+    yPos += 6;
+    doc.text(`• Propósito académico: ${stats.aprendizaje}`, 14, yPos);
+    doc.text(`• Propósito institucional: ${stats.institucional}`, 110, yPos);
+    
+    // Línea separadora
+    doc.setDrawColor(...secondaryColor);
+    doc.setLineWidth(0.5);
+    doc.line(14, yPos + 8, 196, yPos + 8);
+    
+    // Preparar datos de la tabla con más información
+    const tableData = weeklyReservations.map(res => {
+      const purpose = res.purpose === 'aprendizaje' ? 'Académico' : 'Institucional';
+      const details = res.purpose === 'aprendizaje' 
+        ? `${res.purposeDetails?.area || 'N/A'} - ${res.purposeDetails?.grade || 'N/A'}° ${res.purposeDetails?.section || 'N/A'}`
+        : res.purposeDetails?.activityName || 'N/A';
+      
+      return [
+        format(res.startTime, "EEEE dd/MM/yyyy", { locale: es }),
+        res.purposeDetails?.timeSlot || res.purposeDetails?.activityName || 'N/A',
+        res.user.name,
+        purpose,
+        details,
+        res.status
+      ];
     });
     
-    doc.save(`reservas_semana_${format(weekStart, 'yyyy-MM-dd')}.pdf`);
+    // Título de la tabla
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Detalle de Reservas', 14, yPos + 20);
+    
+    // Configuración de la tabla mejorada
+    (doc as any).autoTable({
+      startY: yPos + 28,
+      head: [['Fecha', 'Horario', 'Docente', 'Propósito', 'Detalles', 'Estado']],
+      body: tableData,
+      theme: 'grid',
+      headStyles: { 
+        fillColor: primaryColor,
+        textColor: 255,
+        fontSize: 10,
+        fontStyle: 'bold',
+        halign: 'center'
+      },
+      bodyStyles: {
+        fontSize: 9,
+        cellPadding: 3
+      },
+      columnStyles: {
+        0: { halign: 'center', cellWidth: 35 }, // Fecha (más ancho para día de semana)
+        1: { halign: 'center', cellWidth: 25 }, // Horario
+        2: { halign: 'left', cellWidth: 35 },   // Docente
+        3: { halign: 'center', cellWidth: 25 }, // Propósito
+        4: { halign: 'left', cellWidth: 45 },   // Detalles
+        5: { halign: 'center', cellWidth: 25 }  // Estado
+      },
+      alternateRowStyles: {
+        fillColor: [248, 249, 250]
+      },
+      styles: {
+        lineColor: [200, 200, 200],
+        lineWidth: 0.1
+      },
+      didParseCell: function(data: any) {
+        // Colorear estados
+        if (data.column.index === 5) { // Columna Estado
+          const status = data.cell.text[0];
+          switch(status) {
+            case 'Confirmada':
+              data.cell.styles.textColor = [46, 125, 50]; // Verde oscuro
+              data.cell.styles.fontStyle = 'bold';
+              break;
+            case 'Completada':
+              data.cell.styles.textColor = [56, 142, 60]; // Verde
+              data.cell.styles.fontStyle = 'bold';
+              break;
+            case 'Cancelada':
+              data.cell.styles.textColor = [211, 47, 47]; // Rojo
+              data.cell.styles.fontStyle = 'bold';
+              break;
+          }
+        }
+        // Colorear propósito
+        if (data.column.index === 3) { // Columna Propósito
+          const purpose = data.cell.text[0];
+          if (purpose === 'Académico') {
+            data.cell.styles.textColor = [25, 118, 210]; // Azul
+            data.cell.styles.fontStyle = 'bold';
+          } else if (purpose === 'Institucional') {
+            data.cell.styles.textColor = [156, 39, 176]; // Púrpura
+            data.cell.styles.fontStyle = 'bold';
+          }
+        }
+      }
+    });
+    
+    // Pie de página
+    const pageCount = doc.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(128, 128, 128);
+      doc.text(`Página ${i} de ${pageCount}`, 14, 285);
+      doc.text('Sistema de Gestión - Aula de Innovación Pedagógica', 196, 285, { align: 'right' });
+    }
+    
+    doc.save(`reporte_reservas_semana_${format(weekStart, 'yyyy-MM-dd')}.pdf`);
     setIsExportOpen(false);
     toast({
       title: "Exportación a PDF Exitosa",
-      description: `Se han exportado ${weeklyReservations.length} reservas.`
+      description: `Se ha generado un reporte completo con ${weeklyReservations.length} reservas.`
     });
   }
 
