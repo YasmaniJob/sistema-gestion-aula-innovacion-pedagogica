@@ -25,7 +25,7 @@ export async function getLoans(): Promise<any[]> {
         .order('loan_date', { ascending: false });
 
     if (loanError) {
-        console.error('Error fetching loans:', loanError);
+        // Error fetching loans: loanError
         return [];
     }
     
@@ -60,7 +60,7 @@ export async function addLoan(
   creatorRole: LoanUser['role']
 ): Promise<Loan | null> {
     if (!supabaseAdmin) {
-        console.error('Admin client not available. Cannot create loan.');
+        // Admin client not available. Cannot create loan.
         throw new Error('No se puede crear el préstamo. La configuración del servidor es incorrecta.');
     }
 
@@ -81,7 +81,7 @@ export async function addLoan(
         .single();
     
     if (error) {
-        console.error('Error adding loan:', error);
+        // Error adding loan: error
         throw error;
     }
     
@@ -94,7 +94,7 @@ export async function addLoan(
             .in('id', resourceIds);
         
         if (resourceError) {
-            console.error('Error updating resources for direct loan approval:', resourceError);
+            // Error updating resources for direct loan approval: resourceError
             // Non-fatal error, we can continue. The loan is created.
         }
     }
@@ -123,7 +123,7 @@ export async function updateLoanStatus(
 
     const { data: loan, error: loanError } = await supabaseAdmin.from('loans').select('*, user:users!loans_user_id_fkey(*)').eq('id', loanId).single();
     if (loanError || !loan) {
-        console.error('Error fetching loan to update status:', loanError?.message);
+        // Error fetching loan to update status: loanError?.message
         throw new Error(`No se pudo encontrar el préstamo a actualizar: ${loanError?.message}`);
     }
 
@@ -139,7 +139,7 @@ export async function updateLoanStatus(
         .single();
     
     if (error) {
-        console.error('Error updating loan status:', error.message);
+        // Error updating loan status: error.message
         throw new Error(`Error al actualizar el estado del préstamo: ${error.message}`);
     }
 
@@ -158,7 +158,7 @@ export async function updateLoanStatus(
             .in('id', resourceIds);
 
         if (checkError) {
-            console.error('Error checking resource availability:', checkError);
+            // Error checking resource availability: checkError
             throw new Error('No se pudo verificar la disponibilidad de los recursos.');
         }
 
@@ -175,7 +175,7 @@ export async function updateLoanStatus(
             .select(`*, categories ( name )`);
 
         if (resourceError) {
-            console.error('Error updating resources to "prestado":', resourceError);
+            // Error updating resources to "prestado": resourceError
             return { updatedLoan: fullUpdatedLoan };
         }
         
@@ -220,7 +220,7 @@ export async function processReturn(
 ): Promise<{ updatedLoan: Loan, updatedResources: Resource[] } | null> {
     
     if (!supabaseAdmin) {
-        console.error('Admin client not initialized. Cannot process return.');
+        // Admin client not initialized. Cannot process return.
         return null;
     }
 
@@ -231,7 +231,7 @@ export async function processReturn(
         .single();
 
     if (loanError || !loan) {
-        console.error('Error fetching loan for return:', loanError);
+        // Error fetching loan for return: loanError
         return null;
     }
     
@@ -249,7 +249,7 @@ export async function processReturn(
         .single();
     
     if (updateLoanError) {
-        console.error('Error updating loan on return:', updateLoanError);
+        // Error updating loan on return: updateLoanError
         return null;
     }
 
@@ -271,7 +271,7 @@ export async function processReturn(
             .single();
 
         if (updateResourceError) {
-            console.error(`Error updating resource ${resource.id} status:`, updateResourceError);
+            // Error updating resource ${resource.id} status: updateResourceError
         } else if (updatedResource) {
              const transformedResource = {
                 id: updatedResource.id,

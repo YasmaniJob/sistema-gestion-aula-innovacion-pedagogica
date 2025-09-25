@@ -149,20 +149,16 @@ export function useSessionManager(options: UseSessionManagerOptions = {}) {
         } catch (refreshError) {
           console.warn('SessionManager: Error al refrescar sesión:', refreshError);
           // Si falla el refresh, verificar si la sesión sigue siendo válida
-          try {
-            const currentSession = await getSession();
-            if (!currentSession || !currentSession.user) {
-              console.log('SessionManager: Sesión inválida después de fallo en refresh, cerrando sesión');
-              await signOut();
-              toast({
-                title: 'Sesión expirada',
-                description: 'Tu sesión ha expirado. Redirigiendo a la página de inicio...',
-                variant: 'destructive'
-              });
-              router.push('/');
-            }
-          } catch (sessionCheckError) {
-            console.error('SessionManager: Error al verificar sesión después de fallo en refresh:', sessionCheckError);
+          const currentSession = await getSession();
+          if (!currentSession || !currentSession.user) {
+            console.log('SessionManager: Sesión inválida después de fallo en refresh, cerrando sesión');
+            await signOut();
+            toast({
+              title: 'Sesión expirada',
+              description: 'Tu sesión ha expirado. Redirigiendo a la página de inicio...',
+              variant: 'destructive'
+            });
+            router.push('/');
           }
         }
       }

@@ -3,7 +3,7 @@
 'use server';
 
 import type { Reservation, LoanUser } from '@/domain/types';
-import { supabase } from '@/infrastructure/supabase/client';
+import { supabase, supabaseAdmin } from '@/infrastructure/supabase/client';
 import { getUsers } from './user.service';
 
 /**
@@ -27,7 +27,7 @@ export async function getReservations(): Promise<any[]> {
             .limit(500); // Limitar resultados para evitar sobrecarga
 
         if (error) {
-            console.error('Error fetching reservations:', error);
+            // Error fetching reservations: error
             return [];
         }
 
@@ -55,7 +55,7 @@ export async function getReservations(): Promise<any[]> {
             }
         });
     } catch (error) {
-        console.error('Unexpected error in getReservations:', error);
+        // Unexpected error in getReservations: error
         return [];
     }
 }
@@ -84,13 +84,13 @@ export async function addReservation(
     
     // Validar que tenemos un user_id válido
     if (!insertData.user_id) {
-        console.error('Error: No user ID provided for reservation');
+        // Error: No user ID provided for reservation
         return null;
     }
     
     // Validar que las fechas sean válidas
     if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) {
-        console.error('Error: Invalid date provided for reservation');
+        // Error: Invalid date provided for reservation
         return null;
     }
     
@@ -106,7 +106,7 @@ export async function addReservation(
         .single();
     
     if (error) {
-        console.error('Error adding reservation:', error);
+        // Error adding reservation: error
         return null;
     }
     
@@ -127,6 +127,11 @@ export async function updateReservationStatus(
   reservationId: string,
   status: Reservation['status']
 ): Promise<Reservation | null> {
+    if (!supabaseAdmin) {
+        console.error('Admin privileges required for updating reservations');
+        return null;
+    }
+    
     const { data: reservation, error: fetchError } = await supabase
         .from('reservations')
         .select('*, user:users!reservations_user_id_fkey(*)')
@@ -134,11 +139,11 @@ export async function updateReservationStatus(
         .single();
     
     if(fetchError || !reservation) {
-        console.error('Error fetching reservation to update:', fetchError);
+        // Error fetching reservation to update: fetchError
         return null;
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
         .from('reservations')
         .update({ status })
         .eq('id', reservationId)
@@ -146,7 +151,7 @@ export async function updateReservationStatus(
         .single();
 
     if (error) {
-        console.error('Error updating reservation status:', error);
+        // Error updating reservation status: error
         return null;
     }
 
@@ -171,13 +176,18 @@ export async function updateReservationStatus(
  * @returns A boolean indicating success or failure.
  */
 export async function deleteReservation(reservationId: string): Promise<boolean> {
-    const { error } = await supabase
+    if (!supabaseAdmin) {
+        console.error('Admin privileges required for deleting reservations');
+        return false;
+    }
+    
+    const { error } = await supabaseAdmin
         .from('reservations')
         .delete()
         .eq('id', reservationId);
 
     if (error) {
-        console.error('Error deleting reservation:', error);
+        // Error deleting reservation: error
         return false;
     }
 

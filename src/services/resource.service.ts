@@ -255,6 +255,95 @@ export async function updateResourceStatus(
   return data as Resource;
 }
 
+/**
+ * Fetches resources by category from the database.
+ * @param categoryName - The name of the category to filter by.
+ * @returns A promise that resolves to an array of resources in the specified category.
+ */
+export async function getResourcesByCategory(categoryName: string): Promise<Resource[]> {
+  const { data, error } = await supabase
+    .from('resources')
+    .select(`
+      id,
+      name,
+      brand,
+      model,
+      status,
+      stock,
+      damage_notes,
+      attributes,
+      notes,
+      categories ( name )
+    `)
+    .eq('categories.name', categoryName);
+
+  if (error) {
+    console.error('Error fetching resources by category:', error);
+    return [];
+  }
+
+  // Transform the data to match the Resource domain type
+  return data.map((r: any) => ({
+    id: r.id,
+    name: r.name,
+    brand: r.brand,
+    model: r.model,
+    status: r.status,
+    stock: r.stock,
+    damageNotes: r.damage_notes,
+    category: r.categories?.name || 'Sin categoría',
+    attributes: r.attributes,
+    notes: r.notes,
+    relatedAccessories: r.related_accessories || [],
+    isAccessory: r.is_accessory || false,
+    compatibleWith: r.compatible_with || [],
+  }));
+}
+
+/**
+ * Fetches only available resources from the database.
+ * @returns A promise that resolves to an array of available resources.
+ */
+export async function getAvailableResources(): Promise<Resource[]> {
+  const { data, error } = await supabase
+    .from('resources')
+    .select(`
+      id,
+      name,
+      brand,
+      model,
+      status,
+      stock,
+      damage_notes,
+      attributes,
+      notes,
+      categories ( name )
+    `)
+    .eq('status', 'Disponible');
+
+  if (error) {
+    console.error('Error fetching available resources:', error);
+    return [];
+  }
+
+  // Transform the data to match the Resource domain type
+  return data.map((r: any) => ({
+    id: r.id,
+    name: r.name,
+    brand: r.brand,
+    model: r.model,
+    status: r.status,
+    stock: r.stock,
+    damageNotes: r.damage_notes,
+    category: r.categories?.name || 'Sin categoría',
+    attributes: r.attributes,
+    notes: r.notes,
+    relatedAccessories: r.related_accessories || [],
+    isAccessory: r.is_accessory || false,
+    compatibleWith: r.compatible_with || [],
+  }));
+}
+
 
 // --- Category Services ---
 

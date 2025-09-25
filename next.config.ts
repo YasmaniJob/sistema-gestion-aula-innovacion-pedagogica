@@ -10,7 +10,8 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false, // Habilitamos ESLint durante builds
+    dirs: ['src'], // Solo revisar el directorio src
   },
   
   // Optimización de bundle

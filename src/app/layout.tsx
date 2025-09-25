@@ -5,7 +5,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { AppProvider } from './app-provider';
 import { AuthProvider } from '@/context/auth-provider';
 import { DataProvider } from '@/context/data-provider-refactored';
-import { SessionProvider } from '@/components/providers/session-provider';
+
 import { InstallButton } from '@/components/pwa/install-button';
 import type { Metadata } from 'next';
 
@@ -37,9 +37,7 @@ export default function RootLayout({
       <body className={inter.className}>
         <AuthProvider>
           <DataProvider>
-            <SessionProvider>
-              <AppProvider>{children}</AppProvider>
-            </SessionProvider>
+            <AppProvider>{children}</AppProvider>
           </DataProvider>
         </AuthProvider>
         <InstallButton />

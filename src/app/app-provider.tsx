@@ -22,7 +22,7 @@ function FullPageLoader() {
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { isLoadingData } = useData();
-  const { isLoadingUser, currentUser } = useAuth();
+  const { isLoading: isLoadingUser, user: currentUser } = useAuth();
   const [isHydrated, setIsHydrated] = useState(false);
   const [loadingTimeout, setLoadingTimeout] = useState(false);
   const isAuthPage = pathname === '/' || pathname === '/register';

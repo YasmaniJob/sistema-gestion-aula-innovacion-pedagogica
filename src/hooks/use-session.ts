@@ -11,37 +11,37 @@ export function useSession() {
   const { user, isLoading, setUser, setLoading, isAuthenticated } = useSessionStore();
 
   const checkUserSession = useCallback(async () => {
-    console.log('useSession: Iniciando verificación de sesión');
+    // useSession: Iniciando verificación de sesión
     setLoading(true);
     try {
       const session = await getSession();
       if (session?.user) {
-        console.log('useSession: Sesión activa encontrada para:', session.user.id);
+        // useSession: Sesión activa encontrada para: session.user.id
         const users = await getAllUsers();
         const userProfile = users.find(u => u.id === session.user.id);
 
         if (userProfile) {
-          console.log('useSession: Perfil de usuario encontrado');
+          // useSession: Perfil de usuario encontrado
           setUser(userProfile);
           localStorage.setItem('currentUser', JSON.stringify(userProfile));
         } else {
-          console.warn('useSession: Perfil de usuario no encontrado para sesión activa, cerrando sesión.');
+          // useSession: Perfil de usuario no encontrado para sesión activa, cerrando sesión.
           await signOutSvc();
           setUser(null);
           localStorage.removeItem('currentUser');
         }
       } else {
-        console.log('useSession: No hay sesión activa.');
+        // useSession: No hay sesión activa.
         setUser(null);
         localStorage.removeItem('currentUser');
       }
     } catch (error) {
-      console.error('useSession: Error al verificar sesión:', error);
+      // useSession: Error al verificar sesión: error
       setUser(null);
       localStorage.removeItem('currentUser');
     } finally {
       setLoading(false);
-      console.log('useSession: Verificación de sesión completada.');
+      // useSession: Verificación de sesión completada.
     }
   }, [setUser, setLoading]);
 
@@ -68,7 +68,7 @@ export function useSession() {
       localStorage.setItem('currentUser', JSON.stringify(userProfile));
       return userProfile;
     } catch (error) {
-      console.error('Error en signIn (useSession):', error);
+      // Error en signIn (useSession): error
       throw error;
     }
   }, [setUser]);
@@ -78,9 +78,9 @@ export function useSession() {
       await signOutSvc();
       setUser(null);
       localStorage.removeItem('currentUser');
-      console.log('useSession: Sesión cerrada exitosamente');
+      // useSession: Sesión cerrada exitosamente
     } catch (error) {
-      console.error('Error al cerrar sesión (useSession):', error);
+      // Error al cerrar sesión (useSession): error
       // Asegurarse de limpiar el estado local incluso si falla la llamada a la API
       setUser(null);
       localStorage.removeItem('currentUser');

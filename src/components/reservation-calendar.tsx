@@ -187,9 +187,12 @@ export function ReservationCalendar({
   // Use reservations directly from props instead of local state
   const reservations = initialReservations;
 
+  // Optimize selectedDay update to prevent unnecessary re-renders
   useEffect(() => {
-    setSelectedDay(currentDate);
-  }, [currentDate]);
+    if (!isSameDay(selectedDay, currentDate)) {
+      setSelectedDay(currentDate);
+    }
+  }, [currentDate, selectedDay]);
 
 
   const weekStart = useMemo(() => startOfWeek(currentDate, { weekStartsOn: 1 }), [currentDate]);

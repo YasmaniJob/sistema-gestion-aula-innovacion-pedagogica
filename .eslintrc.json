@@ -1,0 +1,23 @@
+{
+  "extends": "next/core-web-vitals",
+  "rules": {
+    "no-console": "warn",
+    "no-useless-catch": "error"
+  },
+  "overrides": [
+    {
+      "files": ["src/test/**/*.ts", "src/test/**/*.tsx"],
+      "env": {
+        "node": true,
+        "browser": true,
+        "es6": true
+      },
+      "globals": {
+        "setTimeout": "readonly",
+        "clearTimeout": "readonly",
+        "setInterval": "readonly",
+        "clearInterval": "readonly"
+      }
+    }
+  ]
+}

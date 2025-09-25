@@ -18,6 +18,13 @@
 
 import type { LoanUser } from '@/domain/types';
 import { supabase, supabaseAdmin } from '@/infrastructure/supabase/client';
+import { 
+  withErrorHandling, 
+  handleSupabaseError, 
+  handleAuthorizationError, 
+  requireAdminPrivileges, 
+  validateRequiredFields 
+} from '@/utils/error-handler';
 
 /**
  * Fetches users from the database with optional pagination and optimization.
@@ -26,17 +33,23 @@ import { supabase, supabaseAdmin } from '@/infrastructure/supabase/client';
  * @returns A promise that resolves to an array of users.
  */
 export async function getUsers(limit: number = 100, offset: number = 0): Promise<LoanUser[]> {
-    const { data, error } = await supabase
-        .from('users')
-        .select('id, name, email, role, dni, created_at')
-        .order('created_at', { ascending: false })
-        .range(offset, offset + limit - 1);
-    
-    if (error) {
-        console.error('Error fetching users:', error);
+    try {
+        return await withErrorHandling(async () => {
+            const { data, error } = await supabase
+                .from('users')
+                .select('id, name, email, role, dni, created_at')
+                .order('created_at', { ascending: false })
+                .range(offset, offset + limit - 1);
+            
+            if (error) {
+                throw handleSupabaseError(error, 'Obtener usuarios');
+            }
+            return data as LoanUser[];
+        }, 'Obtener usuarios');
+    } catch (error) {
+        // En caso de error, retornar array vacío para mantener compatibilidad
         return [];
     }
-    return data as LoanUser[];
 }
 
 /**
@@ -44,12 +57,18 @@ export async function getUsers(limit: number = 100, offset: number = 0): Promise
  * @returns A promise that resolves to an array of users.
  */
 export async function getAllUsers(): Promise<LoanUser[]> {
-    const { data, error } = await supabase.from('users').select('*');
-    if (error) {
-        console.error('Error fetching all users:', error);
+    try {
+        return await withErrorHandling(async () => {
+            const { data, error } = await supabase.from('users').select('*');
+            if (error) {
+                throw handleSupabaseError(error, 'Obtener todos los usuarios');
+            }
+            return data as LoanUser[];
+        }, 'Obtener todos los usuarios');
+    } catch (error) {
+        // En caso de error, retornar array vacío para mantener compatibilidad
         return [];
     }
-    return data as LoanUser[];
 }
 
 
@@ -72,7 +91,7 @@ export async function addUser(data: Omit<LoanUser, 'id'> & { password?: string }
     .single();
 
   if (error) {
-    console.error('Error adding user to public table:', error);
+    // Error adding user to public table: error
     return null;
   }
   return newUser as LoanUser;
@@ -85,13 +104,9 @@ export async function addUser(data: Omit<LoanUser, 'id'> & { password?: string }
  * @returns The newly created public user profile.
  */
 export async function registerUser(data: Omit<LoanUser, 'id'> & { password?: string }): Promise<LoanUser | null> {
-    if (!data.email || !data.password || !data.dni) {
-        throw new Error('Email, DNI y contraseña son obligatorios para el registro.');
-    }
-    
-    if (!supabaseAdmin) {
-        throw new Error('Admin client not initialized. Cannot create auth user.');
-    }
+    return withErrorHandling(async () => {
+        validateRequiredFields(data, ['email', 'password', 'dni']);
+        requireAdminPrivileges(supabaseAdmin);
 
     // 1. Create the user in Supabase Auth
     const { data: authData, error: authError } = await supabaseAdmin.auth.signUp({
@@ -107,29 +122,29 @@ export async function registerUser(data: Omit<LoanUser, 'id'> & { password?: str
         }
     });
 
-    if (authError) {
-        // Handle case where user might already exist in Auth but not in public table
-        if (authError.message.includes('User already registered')) {
-            const { data: { user } } = await supabaseAdmin.auth.admin.getUserByEmail(data.email);
-            if (user) {
-                 const { data: existingProfile } = await supabase.from('users').select('id').eq('id', user.id).single();
-                 if (!existingProfile) {
-                     // Auth user exists, but profile doesn't. Create profile.
-                     return await createProfileForExistingAuthUser(user.id, data);
-                 }
+        if (authError) {
+            // Handle case where user might already exist in Auth but not in public table
+            if (authError.message.includes('User already registered')) {
+                const { data: { user } } = await supabaseAdmin.auth.admin.getUserByEmail(data.email);
+                if (user) {
+                     const { data: existingProfile } = await supabase.from('users').select('id').eq('id', user.id).single();
+                     if (!existingProfile) {
+                         // Auth user exists, but profile doesn't. Create profile.
+                         return await createProfileForExistingAuthUser(user.id, data);
+                     }
+                }
             }
+            throw handleSupabaseError(authError, 'Crear usuario de autenticación');
         }
-        console.error('Error creating auth user:', authError.message);
-        throw new Error(authError.message);
-    }
-    
-    const authUser = authData.user;
-    if (!authUser) {
-        throw new Error('User was not created in Supabase Auth.');
-    }
-    
-    // 2. Create the user profile in the public.users table
-    return createProfileForExistingAuthUser(authUser.id, data);
+        
+        const authUser = authData.user;
+        if (!authUser) {
+            throw handleSupabaseError({ message: 'User was not created in Supabase Auth.' }, 'Crear usuario de autenticación');
+        }
+        
+        // 2. Create the user profile in the public.users table
+        return createProfileForExistingAuthUser(authUser.id, data);
+    }, 'Registrar usuario');
 }
 
 // Helper to create a profile, used by registerUser and for handling edge cases.
@@ -148,10 +163,9 @@ async function createProfileForExistingAuthUser(userId: string, data: Omit<LoanU
         .single();
     
     if (profileError) {
-        console.error('Error creating user profile:', profileError.message);
         // If profile creation fails, we should ideally delete the auth user to avoid orphans, but this can be complex.
         // For now, we'll throw the error.
-        throw new Error(profileError.message);
+        throw handleSupabaseError(profileError, 'Crear perfil de usuario');
     }
     return newUser as LoanUser;
 }
@@ -164,18 +178,24 @@ async function createProfileForExistingAuthUser(userId: string, data: Omit<LoanU
  * @returns The updated user.
  */
 export async function updateUser(userId: string, dataToUpdate: Partial<Omit<LoanUser, 'id'>>): Promise<LoanUser | null> {
-  const { data: updatedUser, error } = await supabase
-    .from('users')
-    .update(dataToUpdate)
-    .eq('id', userId)
-    .select()
-    .single();
+  try {
+    return await withErrorHandling(async () => {
+      const { data: updatedUser, error } = await supabase
+        .from('users')
+        .update(dataToUpdate)
+        .eq('id', userId)
+        .select()
+        .single();
 
-  if (error) {
-    console.error('Error updating user:', error);
+      if (error) {
+        throw handleSupabaseError(error, 'Actualizar usuario');
+      }
+      return updatedUser as LoanUser;
+    }, 'Actualizar usuario');
+  } catch (error) {
+    // En caso de error, retornar null para mantener compatibilidad
     return null;
   }
-  return updatedUser as LoanUser;
 }
 
 /**
@@ -184,25 +204,28 @@ export async function updateUser(userId: string, dataToUpdate: Partial<Omit<Loan
  * @returns A boolean indicating success.
  */
 export async function deleteUser(userId: string): Promise<boolean> {
-  if (!supabaseAdmin) {
-    console.error('Admin client not available');
-    return false;
-  }
-  const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(userId);
-  if (authError) {
-    // If the error is "User not found", it's okay, maybe it was already deleted.
-    if (!authError.message.includes('User not found')) {
-      console.error('Error deleting auth user:', authError);
-      // We can decide to stop or continue. For robustness, let's continue.
-    }
-  }
+  try {
+    return await withErrorHandling(async () => {
+      requireAdminPrivileges(supabaseAdmin);
+      
+      const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(userId);
+      if (authError) {
+        // If the error is "User not found", it's okay, maybe it was already deleted.
+        if (!authError.message.includes('User not found')) {
+          throw handleSupabaseError(authError, 'Eliminar usuario de autenticación');
+        }
+      }
 
-  const { error } = await supabase.from('users').delete().eq('id', userId);
-  if (error) {
-    console.error('Error deleting user profile:', error);
+      const { error } = await supabase.from('users').delete().eq('id', userId);
+      if (error) {
+        throw handleSupabaseError(error, 'Eliminar perfil de usuario');
+      }
+      return true;
+    }, 'Eliminar usuario');
+  } catch (error) {
+    // En caso de error, retornar false para mantener compatibilidad
     return false;
   }
-  return true;
 }
 
 
@@ -212,24 +235,24 @@ export async function deleteUser(userId: string): Promise<boolean> {
  * @returns An array of the newly created user profiles.
  */
 export async function addMultipleUsers(newUsersData: (Omit<LoanUser, 'id'> & { password?: string })[]): Promise<LoanUser[] | null> {
-  if (!supabaseAdmin) {
-    throw new Error('Operación no permitida. Se requieren privilegios de administrador.');
-  }
+  return withErrorHandling(async () => {
+    requireAdminPrivileges(supabaseAdmin);
 
-  const createdUsers: LoanUser[] = [];
+    const createdUsers: LoanUser[] = [];
 
-  for (const userData of newUsersData) {
-      try {
-          const newUser = await registerUser(userData);
-          if (newUser) {
-              createdUsers.push(newUser);
-          }
-      } catch (error: any) {
-          console.error(`Failed to import user ${userData.email}: ${error.message}`);
-          // Decide if you want to stop the whole batch or continue.
-          // For now, we'll just log the error and continue.
-      }
-  }
-  
-  return createdUsers;
+    for (const userData of newUsersData) {
+        try {
+            const newUser = await registerUser(userData);
+            if (newUser) {
+                createdUsers.push(newUser);
+            }
+        } catch (error: any) {
+            // Failed to import user, but continue with the rest
+            // Decide if you want to stop the whole batch or continue.
+            // For now, we'll just continue.
+        }
+    }
+    
+    return createdUsers;
+  }, 'Agregar múltiples usuarios');
 }

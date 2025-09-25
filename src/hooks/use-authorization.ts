@@ -56,7 +56,7 @@ export function useAuthorization({
 
     // Caso 1: Usuario no autenticado
     if (!currentUser) {
-      console.log('useAuthorization: Usuario no autenticado, redirigiendo a:', redirectTo);
+      // useAuthorization: Usuario no autenticado, redirigiendo a: redirectTo
       hasRedirectedRef.current = true;
       // Usar window.location para evitar problemas con Next.js router
       window.location.href = redirectTo;
@@ -65,7 +65,7 @@ export function useAuthorization({
 
     // Caso 2: Usuario autenticado pero sin el rol requerido
     if (requiredRole && currentUser.role !== requiredRole) {
-      console.log(`useAuthorization: Rol de usuario '${currentUser.role}' no coincide con rol requerido '${requiredRole}'`);
+      // useAuthorization: Rol de usuario '${currentUser.role}' no coincide con rol requerido '${requiredRole}'
       hasRedirectedRef.current = true;
       // Usar window.location para evitar problemas con Next.js router
       window.location.href = '/unauthorized';
@@ -73,11 +73,7 @@ export function useAuthorization({
     }
 
     // Usuario autorizado
-    console.log('useAuthorization: Usuario autorizado:', {
-      email: currentUser.email,
-      role: currentUser.role,
-      requiredRole: requiredRole || 'ninguno'
-    });
+    // useAuthorization: Usuario autorizado: { email: currentUser.email, role: currentUser.role, requiredRole: requiredRole || 'ninguno' }
   }, [currentUser, isLoadingUser, requiredRole, redirectTo, router, autoRedirect]);
 
   // Función para verificar permisos específicos

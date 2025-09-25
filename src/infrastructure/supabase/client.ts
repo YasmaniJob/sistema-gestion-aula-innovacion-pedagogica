@@ -13,7 +13,14 @@ if (!supabaseUrl || !supabaseAnonKey) {
 // Crea y exporta el cliente PÚBLICO de Supabase.
 // Este será el cliente que usaremos en toda la aplicación del lado del cliente.
 // Utiliza la 'anon key' que es segura para usar en el navegador.
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true,
+    flowType: 'pkce'
+  }
+});
 
 
 // --- Cliente de Administrador (para uso exclusivo en el servidor) ---

@@ -35,15 +35,15 @@ const CACHE_DURATION = {
 };
 
 // Función helper para obtener datos del cache
-const getCachedData = <T>(key: string, cacheType: keyof typeof CACHE_DURATION = 'default'): T | null => {
+const getCachedData = <T,>(key: string, cacheType: keyof typeof CACHE_DURATION = 'default'): T | null => {
   const cached = staticDataCache.get(key);
   if (cached) {
     const duration = CACHE_DURATION[cacheType];
     if (Date.now() - cached.timestamp < duration) {
-      console.log(`Cache hit for ${key} (${cacheType})`);
+      // Cache hit
       return cached.data as T;
     } else {
-      console.log(`Cache expired for ${key} (${cacheType})`);
+      // Cache expired
       staticDataCache.delete(key);
     }
   }
@@ -53,7 +53,7 @@ const getCachedData = <T>(key: string, cacheType: keyof typeof CACHE_DURATION = 
 // Función helper para guardar datos en cache
 const setCachedData = (key: string, data: any): void => {
   staticDataCache.set(key, { data, timestamp: Date.now() });
-  console.log(`Data cached for ${key}`);
+  // Data cached
 };
 
 interface AppSettings {
@@ -184,7 +184,7 @@ const applyPrimaryColor = (hex: string) => {
 };
 
 export function DataProvider({ children }: { children: React.ReactNode }) {
-  const { currentUser, isLoadingUser, signOut } = useAuth();
+  const { user: currentUser, isLoading: isLoadingUser, signOut } = useAuth();
   const { toast } = useToast();
   
   // Estados principales
@@ -225,14 +225,14 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     
     const loadSettings = async () => {
       try {
-        console.log('Loading app settings...');
+        // Loading app settings...
         const fetchedSettings = await settingsService.getAppSettings();
         if (fetchedSettings && isMounted) {
           setAppSettings(fetchedSettings);
           applyPrimaryColor(fetchedSettings.primaryColor);
         }
       } catch (error) {
-        console.error('Error loading app settings:', error);
+        // Error loading app settings
       }
     };
     
@@ -250,30 +250,23 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     const loadAppData = async (retryCount = 0) => {
       const maxRetries = productionConfig.vercel.retries;
       
-      console.log('DataProvider: Evaluando carga de datos', {
-        isLoadingRef: isLoadingRef.current,
-        hasLoadedDataRef: hasLoadedDataRef.current,
-        isLoadingUser,
-        currentUser: !!currentUser,
-        retryCount,
-        maxRetries
-      });
+      // Evaluando carga de datos
       
       // Evitar múltiples cargas simultáneas (excepto en reintentos)
       if (retryCount === 0 && (isLoadingRef.current || hasLoadedDataRef.current)) {
-        console.log('DataProvider: Evitando carga múltiple - isLoading:', isLoadingRef.current, 'hasLoaded:', hasLoadedDataRef.current);
+        // Evitando carga múltiple
         return;
       }
       
       // Solo cargar si el usuario ya no está cargando
       if (isLoadingUser) {
-        console.log('DataProvider: Esperando que termine la carga del usuario');
+        // Esperando que termine la carga del usuario
         return;
       }
       
       // Verificación adicional: evitar cargas si ya hay datos cargados y no es un retry
       if (retryCount === 0 && hasLoadedDataRef.current && users.length > 0) {
-        console.log('DataProvider: Datos ya cargados, evitando recarga innecesaria');
+        // Datos ya cargados, evitando recarga innecesaria
         return;
       }
       

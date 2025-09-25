@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useSession } from '@/components/providers/session-provider';
+import { useAuth } from '@/context/auth-provider';
 import { useData } from '@/context/data-provider-refactored';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -22,7 +22,18 @@ export function SessionIndicator({
   showLastActivity = false, 
   compact = false 
 }: SessionIndicatorProps) {
-  const { manualRefresh, extendSession, isSessionActive, lastActivity } = useSession();
+  const { user: currentAuthUser } = useAuth();
+  const isSessionActive = !!currentAuthUser;
+  const lastActivity = Date.now(); // Simplificado por ahora
+  
+  const manualRefresh = async () => {
+    // Implementación simplificada
+    window.location.reload();
+  };
+  
+  const extendSession = () => {
+    // Implementación simplificada - no hace nada por ahora
+  };
   const { currentUser } = useData();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastActivityText, setLastActivityText] = useState('');
