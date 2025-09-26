@@ -145,6 +145,13 @@ export function LoanCard({ loan, isTeacherContext = false, onViewIncidents }: Lo
                 Solicitud Rechazada
             </Badge>
         );
+      case 'active':
+        return isTeacherContext ? (
+            <Badge variant="secondary" className="gap-1.5 bg-blue-100 text-blue-700 border border-blue-200">
+                <CheckCircle className="h-3 w-3" />
+                Aprobado
+            </Badge>
+        ) : null;
       default:
         return null;
     }
@@ -155,7 +162,7 @@ export function LoanCard({ loan, isTeacherContext = false, onViewIncidents }: Lo
         "w-full transition-all relative", 
         isOverdue && "border-destructive/50 bg-destructive/5 border-l-4"
     )}>
-       {loan.status !== 'active' && (
+       {(loan.status !== 'active' || isTeacherContext) && (
             <div className="absolute top-4 right-4">
                 {statusBadge()}
             </div>
