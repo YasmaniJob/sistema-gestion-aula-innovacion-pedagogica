@@ -68,8 +68,10 @@ export default function NewLoanPage() {
     suggestedAccessories,
     chargerIncluded,
     availableChargers,
+    smartOptions,
     toggleAccessory,
     toggleCharger,
+    toggleSmartOption,
     clearAccessories,
     selectAllSuggested,
   } = useAccessorySelection({
@@ -170,6 +172,18 @@ export default function NewLoanPage() {
     if (!isFormValid || !currentUser) return;
     setIsSubmitting(true);
     
+    // Obtener accesorios de las opciones inteligentes seleccionadas
+    const smartOptionAccessories: { id: string; name: string; brand: string }[] = [];
+    smartOptions.filter(option => option.selected).forEach(option => {
+      option.accessories.forEach(accessory => {
+        smartOptionAccessories.push({
+          id: `smart-${accessory.category}-${accessory.brand}-${accessory.model}`,
+          name: accessory.model,
+          brand: accessory.brand
+        });
+      });
+    });
+
     const newLoanData: Omit<Loan, 'id' | 'loanDate' | 'status'> = {
       user: selectedUser!,
       purpose: loanPurpose,
@@ -179,7 +193,8 @@ export default function NewLoanPage() {
       resources: [
         ...selectedResources, 
         ...selectedAccessories,
-        ...(chargerIncluded ? availableChargers.slice(0, 1) : []) // Incluir el primer cargador disponible si está marcado
+        ...smartOptionAccessories,
+        ...(chargerIncluded ? availableChargers.slice(0, 1) : []) // Mantener compatibilidad con cargador manual
       ].map(r => ({ id: r.id, name: r.name, brand: r.brand })),
     };
 
@@ -396,8 +411,10 @@ export default function NewLoanPage() {
                 selectedAccessories={selectedAccessories}
                 chargerIncluded={chargerIncluded}
                 availableChargers={availableChargers}
+                smartOptions={smartOptions}
                 onAccessoryToggle={toggleAccessory}
                 onChargerToggle={toggleCharger}
+                onSmartOptionToggle={toggleSmartOption}
               />
             </CardContent>
           </Card>

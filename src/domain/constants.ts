@@ -70,6 +70,16 @@ export const categoryDetails: Record<string, {
     label: string;
     suggestions?: string[];
   }[];
+  smartOptions?: {
+    label: string;
+    description: string;
+    accessories: {
+      category: string;
+      brand: string;
+      model: string;
+      attributes?: Record<string, string>;
+    }[];
+  }[];
 }> = {
   'Laptops': {
     suggestedBrands: ['HP', 'Dell', 'Lenovo', 'Apple', 'Asus', 'Acer'],
@@ -81,6 +91,44 @@ export const categoryDetails: Record<string, {
       { label: 'Almacenamiento', suggestions: ['128 GB SSD', '256 GB SSD', '512 GB SSD', '1 TB SSD', '1 TB HDD'] },
       { label: 'Sistema Operativo', suggestions: ['Windows 10', 'Windows 11', 'macOS', 'Linux'] },
     ],
+    smartOptions: [
+      {
+        label: 'Incluir Cargador',
+        description: 'Cargador compatible',
+        accessories: [{
+          category: 'Periféricos',
+          brand: 'Genérico',
+          model: 'Cargador',
+          attributes: {
+            'Tipo': 'Cargador'
+          }
+        }]
+      },
+      {
+        label: 'Incluir Mouse',
+        description: 'Mouse USB',
+        accessories: [{
+          category: 'Periféricos',
+          brand: 'Logitech',
+          model: 'Mouse',
+          attributes: {
+            'Conexión': 'USB'
+          }
+        }]
+      },
+      {
+        label: 'Incluir Mochila',
+        description: 'Mochila de transporte',
+        accessories: [{
+          category: 'Periféricos',
+          brand: 'Genérico',
+          model: 'Mochila',
+          attributes: {
+            'Tipo': 'Transporte'
+          }
+        }]
+      }
+    ],
   },
   'Tablets': {
     suggestedBrands: ['Apple', 'Samsung', 'Lenovo', 'Microsoft', 'Huawei'],
@@ -89,6 +137,53 @@ export const categoryDetails: Record<string, {
     technicalDetails: [
       { label: 'Almacenamiento', suggestions: ['32 GB', '64 GB', '128 GB', '256 GB'] },
       { label: 'Tamaño de Pantalla', suggestions: ['8"', '10"', '11"', '12.9"'] },
+    ],
+    smartOptions: [
+      {
+        label: 'Incluir Stylus',
+        description: 'Lápiz digital compatible para escritura y dibujo',
+        accessories: [{
+          category: 'Periféricos',
+          brand: 'Apple',
+          model: 'Apple Pencil',
+          attributes: {
+            'Tipo': 'Stylus',
+            'Compatibilidad': 'iPad'
+          }
+        }]
+      },
+      {
+        label: 'Kit de Productividad',
+        description: 'Teclado, stylus y estuche protector',
+        accessories: [
+          {
+            category: 'Periféricos',
+            brand: 'Apple',
+            model: 'Magic Keyboard',
+            attributes: {
+              'Tipo': 'Teclado',
+              'Conectividad': 'Bluetooth'
+            }
+          },
+          {
+            category: 'Periféricos',
+            brand: 'Apple',
+            model: 'Apple Pencil',
+            attributes: {
+              'Tipo': 'Stylus'
+            }
+          },
+          {
+            category: 'Periféricos',
+            brand: 'Genérico',
+            model: 'Estuche Protector',
+            attributes: {
+              'Tipo': 'Estuche',
+              'Material': 'Silicona'
+            }
+          }
+        ]
+      }
     ],
   },
   'Proyectores': {
@@ -99,6 +194,51 @@ export const categoryDetails: Record<string, {
       { label: 'Lúmenes', suggestions: ['3000', '3500', '4000', '5000'] },
       { label: 'Resolución Nativa', suggestions: ['SVGA', 'XGA', '1080p', '4K'] },
     ],
+    smartOptions: [
+      {
+        label: 'Incluir Cable HDMI',
+        description: 'Cable HDMI de 3 metros',
+        accessories: [{
+          category: 'Cables y Adaptadores',
+          brand: 'Ugreen',
+          model: 'Cable HDMI 3m',
+          attributes: {
+            'Tipo': 'HDMI',
+            'Longitud': '3 metros'
+          }
+        }]
+      },
+      {
+        label: 'Kit de Presentación',
+        description: 'Cable HDMI, VGA y control remoto',
+        accessories: [
+          {
+            category: 'Cables y Adaptadores',
+            brand: 'Ugreen',
+            model: 'Cable HDMI 3m',
+            attributes: {
+              'Tipo': 'HDMI'
+            }
+          },
+          {
+            category: 'Cables y Adaptadores',
+            brand: 'Ugreen',
+            model: 'Cable VGA 3m',
+            attributes: {
+              'Tipo': 'VGA'
+            }
+          },
+          {
+            category: 'Periféricos',
+            brand: 'Genérico',
+            model: 'Control Remoto',
+            attributes: {
+              'Tipo': 'Control Remoto'
+            }
+          }
+        ]
+      }
+    ],
   },
   'Cámaras Fotográficas': {
     suggestedBrands: ['Canon', 'Nikon', 'Sony', 'Fujifilm', 'Panasonic'],
@@ -107,6 +247,51 @@ export const categoryDetails: Record<string, {
     technicalDetails: [
       { label: 'Tipo', suggestions: ['DSLR', 'Mirrorless', 'Compacta'] },
       { label: 'Resolución (MP)', suggestions: ['24 MP', '30 MP', '45 MP', '60 MP'] },
+    ],
+    smartOptions: [
+      {
+        label: 'Incluir Tarjeta SD',
+        description: 'Tarjeta de memoria SD de 64GB',
+        accessories: [{
+          category: 'Periféricos',
+          brand: 'SanDisk',
+          model: 'SD Card 64GB',
+          attributes: {
+            'Tipo': 'Tarjeta SD',
+            'Capacidad': '64GB'
+          }
+        }]
+      },
+      {
+        label: 'Kit Fotográfico Básico',
+        description: 'Tarjeta SD, batería extra y estuche',
+        accessories: [
+          {
+            category: 'Periféricos',
+            brand: 'SanDisk',
+            model: 'SD Card 64GB',
+            attributes: {
+              'Tipo': 'Tarjeta SD'
+            }
+          },
+          {
+            category: 'Periféricos',
+            brand: 'Genérico',
+            model: 'Batería Extra',
+            attributes: {
+              'Tipo': 'Batería'
+            }
+          },
+          {
+            category: 'Periféricos',
+            brand: 'Genérico',
+            model: 'Estuche para Cámara',
+            attributes: {
+              'Tipo': 'Estuche'
+            }
+          }
+        ]
+      }
     ],
   },
   'Filmadoras': {
@@ -117,6 +302,63 @@ export const categoryDetails: Record<string, {
       { label: 'Resolución Máxima', suggestions: ['1080p', '4K', '6K', '8K'] },
       { label: 'Tipo de Sensor', suggestions: ['Full-Frame', 'Super 35', 'Micro 4/3'] },
     ],
+    smartOptions: [
+      {
+        label: 'Incluir Trípode',
+        description: 'Trípode profesional para estabilización',
+        accessories: [{
+          category: 'Periféricos',
+          brand: 'Manfrotto',
+          model: 'Trípode Profesional',
+          attributes: {
+            'Tipo': 'Trípode',
+            'Material': 'Aluminio',
+            'Altura Máxima': '1.8m'
+          }
+        }]
+      },
+      {
+        label: 'Kit de Grabación Completo',
+        description: 'Trípode, tarjeta SD, batería extra y estuche',
+        accessories: [
+          {
+            category: 'Periféricos',
+            brand: 'Manfrotto',
+            model: 'Trípode Profesional',
+            attributes: {
+              'Tipo': 'Trípode'
+            }
+          },
+          {
+            category: 'Periféricos',
+            brand: 'SanDisk',
+            model: 'SD Card 128GB',
+            attributes: {
+              'Tipo': 'Tarjeta SD',
+              'Capacidad': '128GB',
+              'Velocidad': 'Clase 10'
+            }
+          },
+          {
+            category: 'Periféricos',
+            brand: 'Genérico',
+            model: 'Batería Extra',
+            attributes: {
+              'Tipo': 'Batería'
+            }
+          },
+          {
+            category: 'Periféricos',
+            brand: 'Genérico',
+            model: 'Estuche para Filmadora',
+            attributes: {
+              'Tipo': 'Estuche',
+              'Material': 'Nylon'
+            }
+          }
+        ]
+      }
+    ],
   },
   'Grabadoras de Audio': {
     suggestedBrands: ['Zoom', 'Tascam', 'Sony', 'Rode'],
@@ -125,6 +367,63 @@ export const categoryDetails: Record<string, {
     technicalDetails: [
       { label: 'Pistas', suggestions: ['2', '4', '6'] },
       { label: 'Tipo', suggestions: ['Portátil', 'De campo'] },
+    ],
+    smartOptions: [
+      {
+        label: 'Incluir Micrófono Externo',
+        description: 'Micrófono direccional para mejor calidad',
+        accessories: [{
+          category: 'Audio',
+          brand: 'Rode',
+          model: 'VideoMic Pro',
+          attributes: {
+            'Tipo': 'Micrófono',
+            'Patrón': 'Direccional',
+            'Conectividad': '3.5mm'
+          }
+        }]
+      },
+      {
+        label: 'Kit de Grabación Profesional',
+        description: 'Micrófono, tarjeta SD, audífonos y estuche',
+        accessories: [
+          {
+            category: 'Audio',
+            brand: 'Rode',
+            model: 'VideoMic Pro',
+            attributes: {
+              'Tipo': 'Micrófono'
+            }
+          },
+          {
+            category: 'Periféricos',
+            brand: 'SanDisk',
+            model: 'SD Card 64GB',
+            attributes: {
+              'Tipo': 'Tarjeta SD',
+              'Capacidad': '64GB'
+            }
+          },
+          {
+            category: 'Audio',
+            brand: 'Sony',
+            model: 'Audífonos MDR-7506',
+            attributes: {
+              'Tipo': 'Audífonos',
+              'Impedancia': '63Ω'
+            }
+          },
+          {
+            category: 'Periféricos',
+            brand: 'Genérico',
+            model: 'Estuche para Grabadora',
+            attributes: {
+              'Tipo': 'Estuche',
+              'Material': 'Espuma'
+            }
+          }
+        ]
+      }
     ],
   },
   'Drones': {
@@ -135,6 +434,72 @@ export const categoryDetails: Record<string, {
       { label: 'Resolución de Video', suggestions: ['1080p', '4K/30fps', '4K/60fps', '5.4K'] },
       { label: 'Tiempo de Vuelo (min)', suggestions: ['20', '25', '30', '45'] },
     ],
+    smartOptions: [
+      {
+        label: 'Incluir Batería Extra',
+        description: 'Batería adicional para mayor tiempo de vuelo',
+        accessories: [{
+          category: 'Periféricos',
+          brand: 'DJI',
+          model: 'Batería Inteligente',
+          attributes: {
+            'Tipo': 'Batería',
+            'Capacidad': '2453mAh',
+            'Voltaje': '11.55V'
+          }
+        }]
+      },
+      {
+        label: 'Kit de Vuelo Completo',
+        description: 'Baterías extra, tarjeta SD, hélices y estuche',
+        accessories: [
+          {
+            category: 'Periféricos',
+            brand: 'DJI',
+            model: 'Batería Inteligente',
+            attributes: {
+              'Tipo': 'Batería'
+            }
+          },
+          {
+            category: 'Periféricos',
+            brand: 'DJI',
+            model: 'Batería Inteligente',
+            attributes: {
+              'Tipo': 'Batería'
+            }
+          },
+          {
+            category: 'Periféricos',
+            brand: 'SanDisk',
+            model: 'MicroSD 128GB',
+            attributes: {
+              'Tipo': 'Tarjeta MicroSD',
+              'Capacidad': '128GB',
+              'Velocidad': 'U3'
+            }
+          },
+          {
+            category: 'Periféricos',
+            brand: 'DJI',
+            model: 'Hélices de Repuesto',
+            attributes: {
+              'Tipo': 'Hélices',
+              'Cantidad': '4 unidades'
+            }
+          },
+          {
+            category: 'Periféricos',
+            brand: 'DJI',
+            model: 'Estuche de Transporte',
+            attributes: {
+              'Tipo': 'Estuche',
+              'Material': 'Rígido'
+            }
+          }
+        ]
+      }
+    ],
   },
   'Luces de Estudio': {
     suggestedBrands: ['Godox', 'Aputure', 'Neewer', 'Falcon Eyes'],
@@ -143,6 +508,64 @@ export const categoryDetails: Record<string, {
     technicalDetails: [
       { label: 'Tipo', suggestions: ['LED', 'Flash', 'Continuo'] },
       { label: 'Potencia (W)', suggestions: ['60W', '100W', '150W', '200W'] },
+    ],
+    smartOptions: [
+      {
+        label: 'Incluir Trípode de Luz',
+        description: 'Soporte ajustable para posicionamiento',
+        accessories: [{
+          category: 'Periféricos',
+          brand: 'Neewer',
+          model: 'Trípode de Luz 2m',
+          attributes: {
+            'Tipo': 'Trípode',
+            'Altura Máxima': '2m',
+            'Material': 'Aluminio'
+          }
+        }]
+      },
+      {
+        label: 'Kit de Iluminación Profesional',
+        description: 'Trípode, difusor, reflector y bolsa de transporte',
+        accessories: [
+          {
+            category: 'Periféricos',
+            brand: 'Neewer',
+            model: 'Trípode de Luz 2m',
+            attributes: {
+              'Tipo': 'Trípode'
+            }
+          },
+          {
+            category: 'Periféricos',
+            brand: 'Godox',
+            model: 'Softbox 60x60cm',
+            attributes: {
+              'Tipo': 'Difusor',
+              'Tamaño': '60x60cm'
+            }
+          },
+          {
+            category: 'Periféricos',
+            brand: 'Neewer',
+            model: 'Reflector 5 en 1',
+            attributes: {
+              'Tipo': 'Reflector',
+              'Diámetro': '80cm',
+              'Colores': '5 superficies'
+            }
+          },
+          {
+            category: 'Periféricos',
+            brand: 'Genérico',
+            model: 'Bolsa de Transporte',
+            attributes: {
+              'Tipo': 'Bolsa',
+              'Material': 'Nylon'
+            }
+          }
+        ]
+      }
     ],
   },
   'Periféricos': {
@@ -176,6 +599,64 @@ export const categoryDetails: Record<string, {
     technicalDetails: [
       { label: 'Tipo', suggestions: ['Micrófono', 'Audífonos', 'Parlante', 'Interfaz de Audio'] },
     ],
+    smartOptions: [
+      {
+        label: 'Incluir Cable XLR',
+        description: 'Cable XLR de 5 metros para conexión profesional',
+        accessories: [{
+          category: 'Cables y Adaptadores',
+          brand: 'Mogami',
+          model: 'Cable XLR 5m',
+          attributes: {
+            'Tipo': 'XLR',
+            'Longitud': '5 metros',
+            'Conectores': 'XLR Macho a Hembra'
+          }
+        }]
+      },
+      {
+        label: 'Kit de Audio Profesional',
+        description: 'Cable XLR, soporte de micrófono y filtro anti-pop',
+        accessories: [
+          {
+            category: 'Cables y Adaptadores',
+            brand: 'Mogami',
+            model: 'Cable XLR 5m',
+            attributes: {
+              'Tipo': 'XLR'
+            }
+          },
+          {
+            category: 'Periféricos',
+            brand: 'K&M',
+            model: 'Soporte de Micrófono',
+            attributes: {
+              'Tipo': 'Soporte',
+              'Material': 'Metal',
+              'Altura Ajustable': 'Sí'
+            }
+          },
+          {
+            category: 'Periféricos',
+            brand: 'Aokeo',
+            model: 'Filtro Anti-Pop',
+            attributes: {
+              'Tipo': 'Filtro',
+              'Diámetro': '15cm'
+            }
+          },
+          {
+            category: 'Periféricos',
+            brand: 'Genérico',
+            model: 'Espuma Acústica',
+            attributes: {
+              'Tipo': 'Aislamiento',
+              'Material': 'Espuma'
+            }
+          }
+        ]
+      }
+    ],
   },
   'PCs de Escritorio': {
     suggestedBrands: ['Dell', 'HP', 'Lenovo', 'Apple', 'Ensamblado'],
@@ -193,6 +674,66 @@ export const categoryDetails: Record<string, {
     modelPlaceholder: 'Ej: Silla Ergonómica, Mesa de trabajo',
     technicalDetails: [
       { label: 'Tipo', suggestions: ['Silla', 'Mesa', 'Estante', 'Pizarra'] },
+    ],
+    smartOptions: [
+      {
+        label: 'Incluir Cojín Ergonómico',
+        description: 'Cojín de apoyo lumbar para mayor comodidad',
+        accessories: [{
+          category: 'Mobiliario',
+          brand: 'Genérico',
+          model: 'Cojín Lumbar',
+          attributes: {
+            'Tipo': 'Cojín',
+            'Material': 'Memory Foam',
+            'Color': 'Negro'
+          }
+        }]
+      },
+      {
+        label: 'Kit de Oficina Completo',
+        description: 'Cojín, organizador, lámpara y protector de piso',
+        accessories: [
+          {
+            category: 'Mobiliario',
+            brand: 'Genérico',
+            model: 'Cojín Lumbar',
+            attributes: {
+              'Tipo': 'Cojín'
+            }
+          },
+          {
+            category: 'Mobiliario',
+            brand: 'Genérico',
+            model: 'Organizador de Escritorio',
+            attributes: {
+              'Tipo': 'Organizador',
+              'Material': 'Bambú',
+              'Compartimentos': '6'
+            }
+          },
+          {
+            category: 'Periféricos',
+            brand: 'Philips',
+            model: 'Lámpara LED Escritorio',
+            attributes: {
+              'Tipo': 'Lámpara',
+              'Potencia': '12W',
+              'Regulable': 'Sí'
+            }
+          },
+          {
+            category: 'Mobiliario',
+            brand: 'Genérico',
+            model: 'Protector de Piso',
+            attributes: {
+              'Tipo': 'Protector',
+              'Material': 'PVC',
+              'Tamaño': '120x90cm'
+            }
+          }
+        ]
+      }
     ],
   },
   'Default': {

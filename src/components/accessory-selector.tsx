@@ -7,9 +7,21 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { CheckCircle, Plug, Zap } from 'lucide-react';
+import { CheckCircle, Plug, Zap, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Resource } from '@/domain/types';
+
+type SmartOption = {
+  label: string;
+  description: string;
+  accessories: {
+    category: string;
+    brand: string;
+    model: string;
+    attributes?: Record<string, string>;
+  }[];
+  selected?: boolean;
+};
 
 type AccessorySelectorProps = {
   selectedMainResources: Resource[]; // Laptops/proyectores seleccionados
@@ -17,8 +29,10 @@ type AccessorySelectorProps = {
   selectedAccessories: Resource[]; // Accesorios ya seleccionados
   chargerIncluded: boolean; // Estado del switch de cargador
   availableChargers: Resource[]; // Cargadores disponibles
+  smartOptions: SmartOption[]; // Opciones inteligentes disponibles
   onAccessoryToggle: (accessory: Resource) => void;
   onChargerToggle: () => void;
+  onSmartOptionToggle: (optionLabel: string) => void;
 };
 
 export function AccessorySelector({
@@ -27,8 +41,10 @@ export function AccessorySelector({
   selectedAccessories,
   chargerIncluded,
   availableChargers,
+  smartOptions,
   onAccessoryToggle,
   onChargerToggle,
+  onSmartOptionToggle,
 }: AccessorySelectorProps) {
   // Filtrar accesorios compatibles (excluyendo cargadores que se manejan por separado)
   const compatibleAccessories = useMemo(() => {
@@ -90,7 +106,7 @@ export function AccessorySelector({
     resource.category === 'Laptops' || resource.category === 'Tablets' || resource.category === 'Proyectores'
   );
 
-  if (selectedMainResources.length === 0 || (!showChargerSection && compatibleAccessories.length === 0)) {
+  if (selectedMainResources.length === 0 || (smartOptions.length === 0 && compatibleAccessories.length === 0)) {
     return null;
   }
 
@@ -98,65 +114,58 @@ export function AccessorySelector({
     <Card className="mt-4">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-lg">
-          <Plug className="h-5 w-5" />
-          Accesorios y Cargadores
+          <Sparkles className="h-5 w-5" />
+          Opciones Inteligentes y Accesorios
         </CardTitle>
         <p className="text-sm text-muted-foreground">
-          Selecciona los accesorios adicionales y marca si incluyes cargador.
+          Selecciona las opciones inteligentes configuradas y accesorios adicionales.
         </p>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Sección de Cargador */}
-        {showChargerSection && (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <Label htmlFor="charger-switch" className="text-sm font-medium flex items-center gap-2">
-                  <Zap className="h-4 w-4" />
-                  Incluir Cargador
-                </Label>
-                <p className="text-xs text-muted-foreground">
-                  Marca si también estás prestando el cargador junto con el dispositivo
-                </p>
-              </div>
-              <Switch
-                id="charger-switch"
-                checked={chargerIncluded}
-                onCheckedChange={onChargerToggle}
-              />
-            </div>
-            {chargerIncluded && (
-              <div className="pl-6 border-l-2 border-primary/20">
-                {availableChargers.length > 0 ? (
-                  <>
-                    <p className="text-xs text-muted-foreground mb-2">
-                      Cargadores disponibles:
-                    </p>
-                    <div className="flex flex-wrap gap-1">
-                      {availableChargers.slice(0, 3).map((charger) => (
-                        <Badge key={charger.id} variant="outline" className="text-xs">
-                          {charger.name}
-                        </Badge>
-                      ))}
-                      {availableChargers.length > 3 && (
-                        <Badge variant="outline" className="text-xs">
-                          +{availableChargers.length - 3} más
-                        </Badge>
+        {/* Sección de Opciones Inteligentes */}
+        {smartOptions.length > 0 && (
+          <div className="space-y-4">
+            <h4 className="font-medium text-sm flex items-center gap-2">
+              <Sparkles className="h-4 w-4" />
+              Opciones Inteligentes
+            </h4>
+            <p className="text-xs text-muted-foreground">
+              Estas opciones incluyen automáticamente los accesorios configurados para cada tipo de dispositivo.
+            </p>
+            <div className="grid grid-cols-1 gap-3">
+              {smartOptions.map((option) => (
+                <button
+                  key={option.label}
+                  onClick={() => onSmartOptionToggle(option.label)}
+                  className={cn(
+                    'relative flex items-start justify-between p-4 rounded-lg border bg-card text-card-foreground shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-left',
+                    option.selected && 'ring-2 ring-primary border-primary bg-primary/5'
+                  )}
+                >
+                  <div className="flex-1 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-sm">{option.label}</p>
+                      {option.selected && (
+                        <CheckCircle className="h-4 w-4 text-primary" />
                       )}
                     </div>
-                  </>
-                ) : (
-                  <p className="text-xs text-muted-foreground">
-                    Se incluirá cargador compatible con el dispositivo
-                  </p>
-                )}
-              </div>
-            )}
+                    <p className="text-xs text-muted-foreground">{option.description}</p>
+                    <div className="flex flex-wrap gap-1">
+                      {option.accessories.map((accessory, index) => (
+                        <Badge key={index} variant="outline" className="text-xs">
+                          {accessory.model} ({accessory.brand})
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
           </div>
         )}
         
         {/* Separador si hay ambas secciones */}
-        {showChargerSection && Object.keys(groupedAccessories).length > 0 && (
+        {smartOptions.length > 0 && Object.keys(groupedAccessories).length > 0 && (
           <Separator />
         )}
         
@@ -203,16 +212,16 @@ export function AccessorySelector({
         )}
         
         {/* Resumen de selección */}
-        {(chargerIncluded || selectedAccessories.length > 0) && (
+        {(smartOptions.some(option => option.selected) || selectedAccessories.length > 0) && (
           <div className="mt-4 p-3 bg-muted/50 rounded-lg">
-            <p className="text-sm font-medium mb-2">Elementos adicionales seleccionados:</p>
+            <p className="text-sm font-medium mb-2">Elementos seleccionados:</p>
             <div className="flex flex-wrap gap-1">
-              {chargerIncluded && (
-                <Badge variant="secondary" className="text-xs flex items-center gap-1">
-                  <Zap className="h-3 w-3" />
-                  Cargador
+              {smartOptions.filter(option => option.selected).map((option) => (
+                <Badge key={option.label} variant="secondary" className="text-xs flex items-center gap-1">
+                  <Sparkles className="h-3 w-3" />
+                  {option.label}
                 </Badge>
-              )}
+              ))}
               {selectedAccessories.map((accessory) => (
                 <Badge key={accessory.id} variant="secondary" className="text-xs">
                   {accessory.name}

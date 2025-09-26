@@ -49,16 +49,33 @@ export function PendingLoanCard({ loan, onApprove, onReject, isProcessing }: Pen
                 <div className="flex flex-wrap gap-2">
                     {(() => {
                         // Separar recursos principales de cargadores
-                        const mainResources = loan.resources.filter(resource => 
-                            !resource.name.toLowerCase().includes('cargador') && 
-                            !resource.name.toLowerCase().includes('charger') &&
-                            !resource.name.toLowerCase().includes('adaptador de corriente')
-                        );
-                        const chargers = loan.resources.filter(resource => 
-                            resource.name.toLowerCase().includes('cargador') || 
-                            resource.name.toLowerCase().includes('charger') ||
-                            resource.name.toLowerCase().includes('adaptador de corriente')
-                        );
+                        const mainResources = loan.resources.filter(resource => {
+                            // Excluir opciones inteligentes identificadas por ID sintético
+                            if (resource.id && resource.id.startsWith('smart-')) {
+                                return false;
+                            }
+                            
+                            // Excluir accesorios identificados por nombre
+                            return resource.name && (
+                                !resource.name.toLowerCase().includes('cargador') && 
+                                !resource.name.toLowerCase().includes('charger') &&
+                                !resource.name.toLowerCase().includes('adaptador de corriente')
+                            );
+                        });
+                        const chargers = loan.resources.filter(resource => {
+                            // Incluir opciones inteligentes de cargadores por ID sintético
+                            if (resource.id && resource.id.startsWith('smart-') && resource.name) {
+                                const name = resource.name.toLowerCase();
+                                return name.includes('cargador') || name.includes('charger') || name.includes('adaptador');
+                            }
+                            
+                            // Incluir cargadores identificados por nombre
+                            return resource.name && (
+                                resource.name.toLowerCase().includes('cargador') || 
+                                resource.name.toLowerCase().includes('charger') ||
+                                resource.name.toLowerCase().includes('adaptador de corriente')
+                            );
+                        });
                         
                         const elements = [];
                         
@@ -67,7 +84,7 @@ export function PendingLoanCard({ loan, onApprove, onReject, isProcessing }: Pen
                             // Verificar si hay cargadores para este recurso principal
                             const hasCharger = chargers.length > 0 && (
                                 resource.category === 'Laptops' || resource.category === 'Tablets' ||
-                                resource.name.toLowerCase().includes('laptop') || resource.name.toLowerCase().includes('tablet')
+                                (resource.name && (resource.name.toLowerCase().includes('laptop') || resource.name.toLowerCase().includes('tablet')))
                             );
                             
                             elements.push(
@@ -91,7 +108,7 @@ export function PendingLoanCard({ loan, onApprove, onReject, isProcessing }: Pen
                         chargers.forEach((charger) => {
                             const hasMainResource = mainResources.some(resource => 
                                 resource.category === 'Laptops' || resource.category === 'Tablets' ||
-                                resource.name.toLowerCase().includes('laptop') || resource.name.toLowerCase().includes('tablet')
+                                (resource.name && (resource.name.toLowerCase().includes('laptop') || resource.name.toLowerCase().includes('tablet')))
                             );
                             
                             // Solo mostrar cargadores independientes si no hay recursos principales que los incluyan

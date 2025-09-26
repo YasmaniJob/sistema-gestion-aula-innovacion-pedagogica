@@ -22,6 +22,7 @@ import {
   XCircle,
   Zap,
   PackageX,
+  Sparkles,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { format, isBefore, startOfDay, differenceInDays } from 'date-fns';
@@ -203,17 +204,76 @@ export function LoanCard({ loan, isTeacherContext = false, onViewIncidents }: Lo
           </p>
           <div className="flex flex-wrap gap-2">
             {(() => {
-              // Separar recursos principales de cargadores
-              const mainResources = loan.resources.filter(resource => 
-                !resource.name.toLowerCase().includes('cargador') && 
-                !resource.name.toLowerCase().includes('charger') &&
-                !resource.name.toLowerCase().includes('adaptador de corriente')
-              );
-              const chargers = loan.resources.filter(resource => 
-                resource.name.toLowerCase().includes('cargador') || 
-                resource.name.toLowerCase().includes('charger') ||
-                resource.name.toLowerCase().includes('adaptador de corriente')
-              );
+              // Separar recursos principales de accesorios y opciones inteligentes
+              const mainResources = loan.resources.filter(resource => {
+                // Excluir opciones inteligentes identificadas por ID sintético
+                if (resource.id && resource.id.startsWith('smart-')) {
+                  return false;
+                }
+                
+                // Excluir accesorios identificados por nombre
+                return resource.name && (
+                  !resource.name.toLowerCase().includes('cargador') && 
+                  !resource.name.toLowerCase().includes('charger') &&
+                  !resource.name.toLowerCase().includes('adaptador de corriente') &&
+                  !resource.name.toLowerCase().includes('mouse') &&
+                  !resource.name.toLowerCase().includes('mochila') &&
+                  !resource.name.toLowerCase().includes('stylus') &&
+                  !resource.name.toLowerCase().includes('apple pencil') &&
+                  !resource.name.toLowerCase().includes('teclado') &&
+                  !resource.name.toLowerCase().includes('keyboard')
+                );
+              });
+              
+              // Identificar opciones inteligentes comunes
+              const smartAccessories = loan.resources.filter(resource => {
+                // Identificar por ID sintético (opciones inteligentes seleccionadas)
+                if (resource.id && resource.id.startsWith('smart-')) {
+                  return true;
+                }
+                
+                // Identificar por nombre (compatibilidad con recursos existentes)
+                if (!resource.name) return false;
+                const name = resource.name.toLowerCase();
+                return name.includes('cargador') || name.includes('charger') ||
+                       name.includes('adaptador de corriente') ||
+                       name.includes('mouse') ||
+                       name.includes('mochila') ||
+                       name.includes('stylus') ||
+                       name.includes('apple pencil') ||
+                       name.includes('teclado') ||
+                       name.includes('keyboard');
+              });
+              
+              const chargers = smartAccessories.filter(resource => {
+                // Incluir opciones inteligentes de cargadores por ID sintético
+                if (resource.id && resource.id.startsWith('smart-') && resource.name) {
+                  const name = resource.name.toLowerCase();
+                  return name.includes('cargador') || name.includes('charger') || name.includes('adaptador');
+                }
+                
+                // Incluir cargadores identificados por nombre
+                return resource.name && (
+                  resource.name.toLowerCase().includes('cargador') || 
+                  resource.name.toLowerCase().includes('charger') ||
+                  resource.name.toLowerCase().includes('adaptador de corriente')
+                );
+              });
+              
+              const otherSmartAccessories = smartAccessories.filter(resource => {
+                // Para opciones inteligentes por ID sintético
+                if (resource.id && resource.id.startsWith('smart-') && resource.name) {
+                  const name = resource.name.toLowerCase();
+                  return !name.includes('cargador') && !name.includes('charger') && !name.includes('adaptador');
+                }
+                
+                // Para accesorios identificados por nombre
+                return resource.name && (
+                  !resource.name.toLowerCase().includes('cargador') && 
+                  !resource.name.toLowerCase().includes('charger') &&
+                  !resource.name.toLowerCase().includes('adaptador de corriente')
+                );
+              });
               
               const elements = [];
               
@@ -226,7 +286,7 @@ export function LoanCard({ loan, isTeacherContext = false, onViewIncidents }: Lo
                 // Verificar si hay cargadores para este recurso principal
                 const hasCharger = chargers.length > 0 && (
                   resource.category === 'Laptops' || resource.category === 'Tablets' ||
-                  resource.name.toLowerCase().includes('laptop') || resource.name.toLowerCase().includes('tablet')
+                  (resource.name && (resource.name.toLowerCase().includes('laptop') || resource.name.toLowerCase().includes('tablet')))
                 );
                 
                 elements.push(
@@ -266,11 +326,44 @@ export function LoanCard({ loan, isTeacherContext = false, onViewIncidents }: Lo
                 }
               });
               
+              // Mostrar otras opciones inteligentes (mouse, mochila, stylus, etc.)
+              otherSmartAccessories.forEach((accessory) => {
+                const damages = hasDamageReports(accessory.id);
+                const suggestions = hasSuggestionReports(accessory.id);
+                const missing = hasMissingResources(accessory.id);
+                
+                elements.push(
+                  <Badge key={accessory.id} variant="secondary" className="font-normal py-1 pr-3">
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    {accessory.name}
+                    {(damages || suggestions || missing) && onViewIncidents && (
+                        <div className="flex items-center gap-1.5 ml-2 pl-2 border-l border-border">
+                            {damages && (
+                                <button onClick={() => onViewIncidents(loan, accessory)} aria-label="Ver reporte de daños">
+                                  <ShieldAlert className="h-4 w-4 text-destructive" />
+                                </button>
+                            )}
+                            {suggestions && (
+                                 <button onClick={() => onViewIncidents(loan, accessory)} aria-label="Ver reporte de sugerencias">
+                                  <MessageSquarePlus className="h-4 w-4 text-amber-600" />
+                                 </button>
+                            )}
+                            {missing && (
+                                 <button onClick={() => onViewIncidents(loan, accessory)} aria-label="Ver recursos faltantes">
+                                  <PackageX className="h-4 w-4 text-orange-600" />
+                                 </button>
+                            )}
+                        </div>
+                    )}
+                  </Badge>
+                );
+              });
+              
               // Mostrar cargadores independientes (que no están asociados a laptops/tablets)
               chargers.forEach((charger) => {
                 const hasMainResource = mainResources.some(resource => 
                   resource.category === 'Laptops' || resource.category === 'Tablets' ||
-                  resource.name.toLowerCase().includes('laptop') || resource.name.toLowerCase().includes('tablet')
+                  (resource.name && (resource.name.toLowerCase().includes('laptop') || resource.name.toLowerCase().includes('tablet')))
                 );
                 
                 // Solo mostrar cargadores independientes si no hay recursos principales que los incluyan

@@ -68,8 +68,10 @@ export default function NewLoanPage() {
     suggestedAccessories,
     chargerIncluded,
     availableChargers,
+    smartOptions,
     toggleAccessory,
     toggleCharger,
+    toggleSmartOption,
     clearAccessories,
     selectAllSuggested,
   } = useAccessorySelection({
@@ -166,6 +168,18 @@ export default function NewLoanPage() {
     setIsSubmitting(true);
 
     try {
+        // Obtener accesorios de opciones inteligentes seleccionadas
+        const smartAccessories: { id: string; name: string; brand: string }[] = [];
+        smartOptions.filter(option => option.selected).forEach(option => {
+          option.accessories.forEach(accessory => {
+            smartAccessories.push({
+              id: `smart-${accessory.category}-${accessory.brand}-${accessory.model}`,
+              name: accessory.model,
+              brand: accessory.brand
+            });
+          });
+        });
+
         const newLoanData: Omit<Loan, 'id' | 'loanDate' | 'status'> = {
         user: selectedUser!,
         purpose: loanPurpose,
@@ -175,6 +189,7 @@ export default function NewLoanPage() {
         resources: [
           ...selectedResources, 
           ...selectedAccessories,
+          ...smartAccessories, // Incluir accesorios de opciones inteligentes
           ...(chargerIncluded ? availableChargers.slice(0, 1) : []) // Incluir el primer cargador disponible si está marcado
         ].map(r => ({ id: r.id, name: r.name, brand: r.brand })),
         };
@@ -397,8 +412,10 @@ export default function NewLoanPage() {
                 selectedAccessories={selectedAccessories}
                 chargerIncluded={chargerIncluded}
                 availableChargers={availableChargers}
+                smartOptions={smartOptions}
                 onAccessoryToggle={toggleAccessory}
                 onChargerToggle={toggleCharger}
+                onSmartOptionToggle={toggleSmartOption}
               />
             </CardContent>
           </Card>

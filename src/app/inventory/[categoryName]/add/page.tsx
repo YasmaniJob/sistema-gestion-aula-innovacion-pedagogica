@@ -11,6 +11,7 @@ import { useData } from '@/context/data-provider-refactored';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { usePageTitle } from '@/hooks/use-page-title';
+import { categoryDetails } from '@/domain/constants';
 
 export default function AddResourcePage() {
   const params = useParams();
@@ -21,13 +22,44 @@ export default function AddResourcePage() {
   usePageTitle(`Añadir a ${categoryName}`);
 
   const handleSubmit = (data: ResourceFormData) => {
-    
+    // Crear el recurso principal
     addResource({ ...data, category: categoryName });
     
-    toast({
+    // Procesar opciones inteligentes si están seleccionadas
+    if (data.smartOptions && data.smartOptions.length > 0) {
+      const categoryConfig = categoryDetails[categoryName];
+      let totalAccessories = 0;
+      
+      data.smartOptions.forEach(selectedOption => {
+        const smartOption = categoryConfig?.smartOptions?.find(option => option.label === selectedOption);
+        if (smartOption) {
+          smartOption.accessories.forEach(accessory => {
+            // Crear cada accesorio para cada cantidad del recurso principal
+            for (let i = 0; i < data.quantity; i++) {
+              addResource({
+                brand: accessory.brand,
+                model: accessory.model,
+                category: accessory.category,
+                quantity: 1,
+                attributes: accessory.attributes || {},
+                notes: `Accesorio creado automáticamente para ${data.brand} ${data.model || ''}`
+              });
+              totalAccessories++;
+            }
+          });
+        }
+      });
+      
+      toast({
+        title: "¡Recursos y Accesorios Creados!",
+        description: `Se ha(n) añadido ${data.quantity} recurso(s) principal(es) y ${totalAccessories} accesorio(s) automáticamente.`
+      });
+    } else {
+      toast({
         title: "¡Recurso(s) Creado(s)!",
         description: `Se ha(n) añadido ${data.quantity} nuevo(s) recurso(s) a la categoría ${categoryName}.`
-    });
+      });
+    }
 
     router.push(`/inventory/${categoryName}`);
   };

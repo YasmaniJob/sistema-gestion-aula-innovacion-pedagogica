@@ -12,8 +12,9 @@ import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { ChevronDown, Info, PackageCheck, Smile, Meh, Frown, Tag, Cpu, MemoryStick, HardDrive, Hash, AlignLeft } from 'lucide-react';
+import { ChevronDown, Info, PackageCheck, Smile, Meh, Frown, Tag, Cpu, MemoryStick, HardDrive, Hash, AlignLeft, Zap } from 'lucide-react';
 import { categoryDetails } from '@/domain/constants';
 
 const resourceFormSchema = z.object({
@@ -22,6 +23,7 @@ const resourceFormSchema = z.object({
   quantity: z.number().min(1).max(50),
   notes: z.string().optional(),
   attributes: z.record(z.string()).optional(),
+  smartOptions: z.array(z.string()).optional(),
 });
 
 export type ResourceFormData = z.infer<typeof resourceFormSchema>;
@@ -57,6 +59,7 @@ export function ResourceForm({ categoryName, onSubmit, mode, initialData }: Reso
       quantity: 1,
       notes: '',
       attributes: {},
+      smartOptions: [],
     },
   });
 
@@ -225,6 +228,57 @@ export function ResourceForm({ categoryName, onSubmit, mode, initialData }: Reso
                                 </FormItem>
                             )}
                         />
+                    </CardContent>
+                </Card>
+            )}
+
+            {!isEditMode && details.smartOptions && details.smartOptions.length > 0 && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <Zap className="h-5 w-5 text-yellow-500" />
+                            Opciones Inteligentes
+                        </CardTitle>
+                        <CardDescription>
+                            Selecciona para crear automáticamente accesorios relacionados
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        {details.smartOptions.map((option, index) => (
+                            <FormField
+                                key={index}
+                                control={form.control}
+                                name="smartOptions"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                                        <FormControl>
+                                            <Checkbox
+                                                checked={field.value?.includes(option.label) || false}
+                                                onCheckedChange={(checked) => {
+                                                    const currentOptions = field.value || [];
+                                                    if (checked) {
+                                                        field.onChange([...currentOptions, option.label]);
+                                                    } else {
+                                                        field.onChange(currentOptions.filter(item => item !== option.label));
+                                                    }
+                                                }}
+                                            />
+                                        </FormControl>
+                                        <div className="space-y-1 leading-none">
+                                            <FormLabel className="font-medium">
+                                                {option.label}
+                                            </FormLabel>
+                                            <FormDescription>
+                                                {option.description}
+                                            </FormDescription>
+                                            <div className="text-xs text-muted-foreground mt-1">
+                                                Creará: {option.accessories.map(acc => `${acc.brand} ${acc.model}`).join(', ')}
+                                            </div>
+                                        </div>
+                                    </FormItem>
+                                )}
+                            />
+                        ))}
                     </CardContent>
                 </Card>
             )}

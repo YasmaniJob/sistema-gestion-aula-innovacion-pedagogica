@@ -2,11 +2,24 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import type { Resource } from '@/domain/types';
+import { categoryDetails } from '@/domain/constants';
 
 type UseAccessorySelectionProps = {
   selectedResources: Resource[];
   allResources: Resource[];
   autoSelectChargers?: boolean;
+};
+
+type SmartOption = {
+  label: string;
+  description: string;
+  accessories: {
+    category: string;
+    brand: string;
+    model: string;
+    attributes?: Record<string, string>;
+  }[];
+  selected?: boolean;
 };
 
 type UseAccessorySelectionReturn = {
@@ -15,8 +28,10 @@ type UseAccessorySelectionReturn = {
   suggestedAccessories: Resource[];
   chargerIncluded: boolean;
   availableChargers: Resource[];
+  smartOptions: SmartOption[];
   toggleAccessory: (accessory: Resource) => void;
   toggleCharger: () => void;
+  toggleSmartOption: (optionLabel: string) => void;
   clearAccessories: () => void;
   selectAllSuggested: () => void;
 };
@@ -28,6 +43,7 @@ export function useAccessorySelection({
 }: UseAccessorySelectionProps): UseAccessorySelectionReturn {
   const [selectedAccessories, setSelectedAccessories] = useState<Resource[]>([]);
   const [chargerIncluded, setChargerIncluded] = useState<boolean>(false);
+  const [selectedSmartOptions, setSelectedSmartOptions] = useState<string[]>([]);
 
   // Filtrar recursos principales (laptops, proyectores)
   const mainResources = useMemo(() => {
@@ -37,6 +53,33 @@ export function useAccessorySelection({
       resource.category === 'Tablets'
     );
   }, [selectedResources]);
+
+  // Obtener opciones inteligentes disponibles basadas en los recursos principales
+  const smartOptions = useMemo(() => {
+    if (mainResources.length === 0) return [];
+
+    const availableOptions: SmartOption[] = [];
+    
+    // Obtener opciones inteligentes únicas de todas las categorías de recursos principales
+    const uniqueCategories = [...new Set(mainResources.map(resource => resource.category))];
+    
+    uniqueCategories.forEach(category => {
+      const categoryConfig = categoryDetails[category as keyof typeof categoryDetails];
+      if (categoryConfig?.smartOptions) {
+        categoryConfig.smartOptions.forEach(option => {
+          // Evitar duplicados
+          if (!availableOptions.some(existing => existing.label === option.label)) {
+            availableOptions.push({
+              ...option,
+              selected: selectedSmartOptions.includes(option.label)
+            });
+          }
+        });
+      }
+    });
+
+    return availableOptions;
+  }, [mainResources, selectedSmartOptions]);
 
   // Obtener accesorios disponibles
   const availableAccessories = useMemo(() => {
@@ -194,9 +237,21 @@ export function useAccessorySelection({
     setChargerIncluded(prev => !prev);
   };
 
+  const toggleSmartOption = (optionLabel: string) => {
+    setSelectedSmartOptions(prev => {
+      const isSelected = prev.includes(optionLabel);
+      if (isSelected) {
+        return prev.filter(label => label !== optionLabel);
+      } else {
+        return [...prev, optionLabel];
+      }
+    });
+  };
+
   const clearAccessories = () => {
     setSelectedAccessories([]);
     setChargerIncluded(false);
+    setSelectedSmartOptions([]);
   };
 
   const selectAllSuggested = () => {
@@ -209,8 +264,10 @@ export function useAccessorySelection({
     suggestedAccessories,
     chargerIncluded,
     availableChargers,
+    smartOptions,
     toggleAccessory,
     toggleCharger,
+    toggleSmartOption,
     clearAccessories,
     selectAllSuggested,
   };
