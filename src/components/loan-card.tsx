@@ -67,14 +67,22 @@ export function LoanCard({ loan, isTeacherContext = false, onViewIncidents }: Lo
       }
     }
     
-    // Formatear fecha de devolución para todos los préstamos que tengan una fecha válida
-    const returnDate = isValidDate(loan.returnDate) ? loan.returnDate : null;
+    // Para préstamos devueltos, usar la fecha de devolución real
+    // Para préstamos activos, usar la fecha esperada de devolución para cálculos de vencimiento
+    let formattedReturnDate = null;
+    if (loan.status === 'returned' && loan.returnDate && isValidDate(loan.returnDate)) {
+      // Para préstamos devueltos, mostrar la fecha real de devolución
+      formattedReturnDate = format(loan.returnDate, "dd MMM yyyy, h:mm:ss a", { locale: es });
+    } else if (loan.status === 'active' && loan.returnDate && isValidDate(loan.returnDate)) {
+      // Para préstamos activos, solo formatear si se necesita para otros propósitos
+      formattedReturnDate = format(loan.returnDate, "dd MMM yyyy, h:mm:ss a", { locale: es });
+    }
 
     return {
       isOverdue: overdue,
       overdueDays: days,
       formattedLoanDate: format(loan.loanDate, "dd MMM yyyy, h:mm:ss a", { locale: es }),
-      formattedReturnDate: returnDate ? format(returnDate, "dd MMM yyyy, h:mm:ss a", { locale: es }) : null,
+      formattedReturnDate,
     };
   }, [isClient, loan]);
 
