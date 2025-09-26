@@ -675,7 +675,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   const approveLoan = useCallback(async (loanId: string) => {
     try {
-      const result = await loanService.updateLoanStatus(loanId, 'active');
+      const result = await loanService.approveLoan(loanId);
       
       if (result && result.updatedLoan) {
           const updatedLoanWithDate = {
@@ -701,7 +701,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const rejectLoan = useCallback(async (loanId: string) => {
-      const result = await loanService.updateLoanStatus(loanId, 'rejected');
+      const result = await loanService.rejectLoan(loanId);
       if (result && result.updatedLoan) {
         setLoans(prev => prev.map(l => l.id === loanId ? { ...result.updatedLoan, loanDate: new Date(result.updatedLoan.loanDate) } : l));
       } else {
