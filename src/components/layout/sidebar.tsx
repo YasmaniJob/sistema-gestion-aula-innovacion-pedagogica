@@ -6,6 +6,8 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   ChevronDown,
+  LogOut,
+  User
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -16,7 +18,7 @@ import { Separator } from '../ui/separator';
 import { useData } from '@/context/data-provider-refactored';
 import { Logo } from '../logo';
 import { useSidebar } from './sidebar-provider';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { adminNavItems, teacherNavItems } from './sidebar-items';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -25,10 +27,16 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 
 export function Sidebar() {
   const { isSidebarCollapsed, toggleSidebarCollapse } = useSidebar();
-  const { currentUser, appSettings } = useData(); 
+  const { currentUser, appSettings, signOut } = useData(); 
   const role = currentUser?.role;
   const isMobile = useIsMobile();
   const pathname = usePathname();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await signOut();
+    router.push('/');
+  };
 
   const navItems = useMemo(() => {
       if (!role) return [];
@@ -85,6 +93,15 @@ export function Sidebar() {
                <div className={cn("p-2", isSidebarCollapsed && !isMobile && "p-0")}>
                     <UserProfile isCollapsed={isSidebarCollapsed && !isMobile} />
                 </div>
+              <Button
+                  variant="ghost"
+                  className={cn("w-full h-auto p-2.5 flex text-destructive hover:text-destructive hover:bg-destructive/10", isSidebarCollapsed ? 'justify-center' : 'justify-start')}
+                  onClick={handleLogout}
+              >
+                  <LogOut className="h-5 w-5" />
+                  {!isSidebarCollapsed && <span className="font-medium ml-3">Cerrar Sesión</span>}
+                  <span className="sr-only">Cerrar Sesión</span>
+              </Button>
               <Button
                   variant="ghost"
                   className={cn("w-full h-auto p-2.5 flex", isSidebarCollapsed ? 'justify-center' : 'justify-start')}

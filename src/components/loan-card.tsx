@@ -37,7 +37,11 @@ type LoanCardProps = {
   onViewIncidents?: (loan: Loan, resource: Pick<Resource, 'id' | 'name' | 'brand'>) => void;
 };
 
-const isValidDate = (d: any): d is Date => d instanceof Date && !isNaN(d.getTime());
+const isValidDate = (d: any): d is Date => {
+  if (!d) return false;
+  const date = d instanceof Date ? d : new Date(d);
+  return date instanceof Date && !isNaN(date.getTime());
+};
 
 export function LoanCard({ loan, isTeacherContext = false, onViewIncidents }: LoanCardProps) {
   const [isClient, setIsClient] = useState(false);
@@ -56,11 +60,13 @@ export function LoanCard({ loan, isTeacherContext = false, onViewIncidents }: Lo
       return { isOverdue: false, overdueDays: 0, formattedLoanDate: 'Fecha inválida', formattedReturnDate: null };
     }
 
+    const loanDateObj = loan.loanDate instanceof Date ? loan.loanDate : new Date(loan.loanDate);
+
     let overdue = false;
     let days = 0;
     if (loan.status === 'active' && loan.returnDate && isValidDate(loan.returnDate)) {
       const today = startOfDay(new Date());
-      const returnDay = startOfDay(loan.returnDate);
+      const returnDay = startOfDay(loan.returnDate instanceof Date ? loan.returnDate : new Date(loan.returnDate));
       overdue = isBefore(returnDay, today);
       if (overdue) {
         days = differenceInDays(today, returnDay);
@@ -72,16 +78,18 @@ export function LoanCard({ loan, isTeacherContext = false, onViewIncidents }: Lo
     let formattedReturnDate = null;
     if (loan.status === 'returned' && loan.returnDate && isValidDate(loan.returnDate)) {
       // Para préstamos devueltos, mostrar la fecha real de devolución
-      formattedReturnDate = format(loan.returnDate, "dd MMM yyyy, h:mm:ss a", { locale: es });
+      const returnDateObj = loan.returnDate instanceof Date ? loan.returnDate : new Date(loan.returnDate);
+      formattedReturnDate = format(returnDateObj, "dd MMM yyyy, h:mm:ss a", { locale: es });
     } else if (loan.status === 'active' && loan.returnDate && isValidDate(loan.returnDate)) {
       // Para préstamos activos, solo formatear si se necesita para otros propósitos
-      formattedReturnDate = format(loan.returnDate, "dd MMM yyyy, h:mm:ss a", { locale: es });
+      const returnDateObj = loan.returnDate instanceof Date ? loan.returnDate : new Date(loan.returnDate);
+      formattedReturnDate = format(returnDateObj, "dd MMM yyyy, h:mm:ss a", { locale: es });
     }
 
     return {
       isOverdue: overdue,
       overdueDays: days,
-      formattedLoanDate: format(loan.loanDate, "dd MMM yyyy, h:mm:ss a", { locale: es }),
+      formattedLoanDate: format(loanDateObj, "dd MMM yyyy, h:mm:ss a", { locale: es }),
       formattedReturnDate,
     };
   }, [isClient, loan]);
