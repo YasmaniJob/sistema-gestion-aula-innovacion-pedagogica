@@ -1,6 +1,6 @@
 
 
-import { Briefcase, CheckCircle2, CircleDotDashed, Clock, Hand, MoreHorizontal, School, ShieldAlert, TriangleAlert, UserCog, Users, Users2, Wrench, Camera, Laptop, Monitor, Projector, Tablet, PlusCircle, Video, Mouse, Router, Cable, Headphones, HardDrive, Sofa, Tv, Package, Mic, Lightbulb, Airplay } from "lucide-react";
+import { Briefcase, CheckCircle2, CircleDotDashed, Clock, Hand, MoreHorizontal, School, ShieldAlert, TriangleAlert, UserCog, Users, Users2, Wrench, Camera, Laptop, Monitor, Projector, Tablet, PlusCircle, Video, Mouse, Router, Cable, Headphones, HardDrive, Sofa, Tv, Package, Mic, Lightbulb, Airplay, Keyboard, Cpu, Speaker, Webcam } from "lucide-react";
 import type { GenericParticipant, ResourceStatus } from "./types";
 
 export const categoryVisuals: Record<string, { icon: React.ElementType; color: string;}> = {
@@ -16,7 +16,12 @@ export const categoryVisuals: Record<string, { icon: React.ElementType; color: s
     'Redes': { icon: Router, color: 'text-gray-500' },
     'Cables y Adaptadores': { icon: Cable, color: 'text-neutral-500' },
     'Audio': { icon: Headphones, color: 'text-rose-500' },
-    'PCs de Escritorio': { icon: Tv, color: 'text-teal-500' },
+    'Monitores': { icon: Monitor, color: 'text-blue-400' },
+    'Teclados': { icon: Keyboard, color: 'text-purple-400' },
+    'Mouse': { icon: Mouse, color: 'text-green-500' },
+    'Torres/CPU': { icon: Cpu, color: 'text-red-500' },
+    'Parlantes': { icon: Speaker, color: 'text-yellow-500' },
+    'Webcams': { icon: Webcam, color: 'text-indigo-500' },
     'Mobiliario': { icon: Sofa, color: 'text-lime-600' },
     'Default': { icon: Package, color: 'text-zinc-500' },
 };
@@ -24,7 +29,7 @@ export const categoryVisuals: Record<string, { icon: React.ElementType; color: s
 export const categoryNames = [
     'Laptops', 'Tablets', 'Proyectores', 'Cámaras Fotográficas',
     'Filmadoras', 'Grabadoras de Audio', 'Drones', 'Luces de Estudio', 'Periféricos', 'Redes', 'Cables y Adaptadores',
-    'Audio', 'PCs de Escritorio', 'Mobiliario'
+    'Audio', 'Monitores', 'Teclados', 'Mouse', 'Torres/CPU', 'Parlantes', 'Webcams', 'Mobiliario'
 ];
 
 
@@ -658,15 +663,76 @@ export const categoryDetails: Record<string, {
       }
     ],
   },
-  'PCs de Escritorio': {
-    suggestedBrands: ['Dell', 'HP', 'Lenovo', 'Apple', 'Ensamblado'],
-    brandPlaceholder: 'Ej: Dell, Apple',
-    modelPlaceholder: 'Ej: OptiPlex, iMac',
+  'Monitores': {
+    suggestedBrands: ['Dell', 'HP', 'LG', 'Samsung', 'Acer', 'Asus'],
+    brandPlaceholder: 'Ej: Dell, LG',
+    modelPlaceholder: 'Ej: U2720Q, 27UL850',
     technicalDetails: [
-      { label: 'Procesador', suggestions: ['Intel Core i5', 'Intel Core i7', 'AMD Ryzen 5', 'Apple M1'] },
-      { label: 'RAM', suggestions: ['8 GB', '16 GB', '32 GB'] },
-      { label: 'Almacenamiento', suggestions: ['256 GB SSD', '512 GB SSD', '1 TB HDD'] },
-    ],
+      { label: 'Tamaño', suggestions: ['19"', '21.5"', '24"', '27"', '32"', '34" UltraWide'] },
+      { label: 'Resolución', suggestions: ['1920x1080', '2560x1440', '3840x2160', '3440x1440'] },
+      { label: 'Tipo de Panel', suggestions: ['IPS', 'VA', 'TN', 'OLED'] },
+      { label: 'Frecuencia de actualización', suggestions: ['60Hz', '75Hz', '144Hz', '165Hz', '240Hz'] },
+      { label: 'Tecnologías', suggestions: ['FreeSync', 'G-Sync', 'HDR', 'USB-C', 'PIP/PBP'] },
+    ]
+  },
+  'Teclados': {
+    suggestedBrands: ['Logitech', 'Corsair', 'Razer', 'HyperX', 'Redragon', 'Microsoft'],
+    brandPlaceholder: 'Ej: Logitech, Razer',
+    modelPlaceholder: 'Ej: K120, BlackWidow',
+    technicalDetails: [
+      { label: 'Tipo', suggestions: ['Membrana', 'Mecánico', 'Semi-mecánico'] },
+      { label: 'Switch', suggestions: ['Red', 'Blue', 'Brown', 'Black', 'Silent'] },
+      { label: 'Retroiluminación', suggestions: ['Sí', 'No', 'RGB'] },
+      { label: 'Teclado numérico', suggestions: ['Sí', 'No'] },
+    ]
+  },
+  'Mouse': {
+    suggestedBrands: ['Logitech', 'Razer', 'Corsair', 'SteelSeries', 'HyperX', 'Microsoft'],
+    brandPlaceholder: 'Ej: Logitech, Razer',
+    modelPlaceholder: 'Ej: G502, DeathAdder',
+    technicalDetails: [
+      { label: 'Tipo', suggestions: ['Óptico', 'Láser'] },
+      { label: 'DPI', suggestions: ['1000 DPI', '1600 DPI', '3200 DPI', '6400 DPI', '16000+ DPI'] },
+      { label: 'Conectividad', suggestions: ['USB', 'Inalámbrico', 'Bluetooth'] },
+      { label: 'Botones programables', suggestions: ['Sí', 'No'] },
+      { label: 'Peso', suggestions: ['< 100g', '100-120g', '> 120g'] },
+    ]
+  },
+  'Torres/CPU': {
+    suggestedBrands: ['Dell', 'HP', 'Lenovo', 'Apple', 'Ensamblado'],
+    brandPlaceholder: 'Ej: Dell, HP, Ensamblado',
+    modelPlaceholder: 'Ej: OptiPlex, ProDesk',
+    technicalDetails: [
+      { label: 'Procesador', suggestions: ['Intel Core i3', 'Intel Core i5', 'Intel Core i7', 'Intel Core i9', 'AMD Ryzen 3', 'AMD Ryzen 5', 'AMD Ryzen 7', 'AMD Ryzen 9'] },
+      { label: 'RAM', suggestions: ['4 GB', '8 GB', '16 GB', '32 GB', '64 GB'] },
+      { label: 'Almacenamiento', suggestions: ['256 GB SSD', '512 GB SSD', '1 TB SSD', '2 TB HDD', '4 TB HDD', '1 TB SSD + 2 TB HDD'] },
+      { label: 'Tarjeta gráfica', suggestions: ['Integrada', 'NVIDIA GTX 1650', 'NVIDIA RTX 3060', 'NVIDIA RTX 4070', 'AMD Radeon RX 6600', 'AMD Radeon RX 7800 XT'] },
+      { label: 'Sistema Operativo', suggestions: ['Windows 10', 'Windows 11', 'macOS', 'Linux', 'Sin sistema operativo'] },
+    ]
+  },
+  'Parlantes': {
+    suggestedBrands: ['Logitech', 'Creative', 'Bose', 'JBL', 'Edifier', 'Sony'],
+    brandPlaceholder: 'Ej: Logitech, Creative',
+    modelPlaceholder: 'Ej: Z120, Pebble',
+    technicalDetails: [
+      { label: 'Tipo', suggestions: ['2.0', '2.1', '5.1', 'Soundbar'] },
+      { label: 'Potencia', suggestions: ['5W', '10W', '20W', '30W', '50W', '100W+'] },
+      { label: 'Conectividad', suggestions: ['3.5mm', 'USB', 'Bluetooth', 'Óptico', 'HDMI ARC'] },
+      { label: 'Control de volumen', suggestions: ['En parlante', 'Control remoto', 'Sin control'] },
+      { label: 'Iluminación', suggestions: ['Sí', 'No', 'RGB'] },
+    ]
+  },
+  'Webcams': {
+    suggestedBrands: ['Logitech', 'Microsoft', 'Razer', 'AverMedia', 'Elgato'],
+    brandPlaceholder: 'Ej: Logitech, Microsoft',
+    modelPlaceholder: 'Ej: C920, Brio',
+    technicalDetails: [
+      { label: 'Resolución', suggestions: ['720p', '1080p', '2K', '4K'] },
+      { label: 'FPS', suggestions: ['30 FPS', '60 FPS', '90 FPS'] },
+      { label: 'Enfoque', suggestions: ['Automático', 'Manual', 'Enfoque fijo'] },
+      { label: 'Micrófono', suggestions: ['Integrado', 'No incluye'] },
+      { label: 'Montaje', suggestions: ['Clip', 'Trípode', 'Soporte universal'] },
+    ]
   },
   'Mobiliario': {
     suggestedBrands: ['Genérico', 'Ikea', 'Herman Miller'],

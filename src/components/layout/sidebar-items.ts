@@ -7,8 +7,8 @@ import {
   GraduationCap,
   LayoutDashboard,
   LayoutGrid,
-  Package,
   LineChart,
+  RefreshCw,
   Settings,
   User,
   Users,
@@ -17,6 +17,7 @@ import {
   Paintbrush,
   Shield,
   Activity,
+  Package,
 } from 'lucide-react';
 
 export const adminNavItems = [

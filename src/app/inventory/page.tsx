@@ -1,10 +1,8 @@
-
-
 'use client';
 
 import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Search, RefreshCw } from 'lucide-react';
+import { PlusCircle, Search, RefreshCw, Package } from 'lucide-react';
 import { useData } from '@/context/data-provider-refactored';
 import {
   Dialog,
@@ -24,7 +22,7 @@ import { CategoryCard } from '@/components/category-card';
 import { usePageTitle } from '@/hooks/use-page-title';
 
 export default function InventoryPage() {
-  useAuthorization('Admin');
+  useAuthorization({ requiredRole: 'Admin' });
   usePageTitle('Inventario de Recursos');
   const { categories, addCategories, resources, deleteCategory, refreshResources } = useData();
   const [isCategoryDialogOpen, setCategoryDialogOpen] = useState(false);
