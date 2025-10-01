@@ -180,6 +180,7 @@ export function MobileNav() {
     return baseItems;
   }, [currentUser?.role, shouldShowModal, modalType, addActionPath]);
 
+  // Early return for non-mobile devices (must be after ALL Hooks)
   if (!isMobile) {
     return null;
   }
