@@ -462,32 +462,49 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           
           // Convertir fechas de strings a objetos Date para loans
           const processedLoans = loans.map(l => {
+            console.log('DataProvider: Procesando préstamo', l.id, {
+              loanDate: l.loanDate,
+              loanDateType: typeof l.loanDate,
+              returnDate: l.returnDate,
+              returnDateType: typeof l.returnDate,
+              status: l.status,
+              userId: l.user?.id,
+              userName: l.user?.name
+            });
+
             const loanDate = new Date(l.loanDate);
             const returnDate = l.returnDate ? new Date(l.returnDate) : undefined;
+
+            console.log('DataProvider: Fechas convertidas', {
+              loanDateConverted: loanDate,
+              loanDateValid: isValidDate(loanDate),
+              returnDateConverted: returnDate,
+              returnDateValid: returnDate ? isValidDate(returnDate) : 'no return date'
+            });
+
             return {
               ...l,
               loanDate: isValidDate(loanDate) ? loanDate : new Date(),
               returnDate: returnDate && isValidDate(returnDate) ? returnDate : undefined,
-              user: userMap.get(l.user_id) || { id: l.user_id, name: 'Usuario Desconocido', role: 'Docente' }
+              // El usuario ya viene completo del servidor, solo aseguramos que esté presente
+              user: l.user || { id: 'unknown', name: 'Usuario Desconocido', role: 'Docente' }
             };
           });
-          
+
           // Convertir fechas de strings a objetos Date para reservations
           const processedReservations = reservations.map(r => {
             const startTime = new Date(r.startTime);
             const endTime = r.endTime ? new Date(r.endTime) : undefined;
-            
-            // Si la reserva ya tiene un objeto user válido del servicio, usarlo
-            // Si no, intentar mapear desde userMap como fallback
+
             let user = r.user;
             if (!user || !user.id) {
-              user = userMap.get(r.user_id) || { 
-                id: r.user_id || 'unknown', 
-                name: 'Usuario Desconocido', 
-                role: 'Docente' as const 
+              user = userMap.get(r.user_id) || {
+                id: r.user_id || 'unknown',
+                name: 'Usuario Desconocido',
+                role: 'Docente' as const
               };
             }
-            
+
             return {
               ...r,
               startTime: isValidDate(startTime) ? startTime : new Date(),
@@ -495,23 +512,15 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
               user: user
             };
           });
-          
+
           setLoans(processedLoans as Loan[]);
           setReservations(processedReservations as Reservation[]);
-
           setCategories(categories);
           setMeetings(meetings.map(m => ({ ...m, date: new Date(m.date) })));
           setResources(resources);
           setAreas(areas);
           setGrades(grades);
           setPedagogicalHours(hours);
-          
-          console.log('DataProvider: Datos de la aplicación cargados exitosamente', {
-            finalUsersCount: users.length,
-            finalResourcesCount: resources.length,
-            finalLoansCount: processedLoans.length,
-            finalReservationsCount: processedReservations.length
-          });
         }
       } catch (error) {
         const loadTime = Date.now() - startTime;
@@ -768,10 +777,15 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       setLoans(prevLoans => {
         const currentUsers = users; // Capturar el valor actual
         const loansWithUsers = fetchedLoans.map(loan => {
-          const user = currentUsers.find(u => u.id === loan.user_id);
+          console.log('refreshLoans: Procesando préstamo', loan.id, {
+            userId: loan.user?.id,
+            userName: loan.user?.name
+          });
+
+          // El usuario ya viene completo del servidor, solo aseguramos que esté presente
           return {
             ...loan,
-            user: user || { id: loan.user_id, name: 'Usuario desconocido', email: '', role: 'Docente' as const },
+            user: loan.user || { id: 'unknown', name: 'Usuario desconocido', email: '', role: 'Docente' as const },
           };
         });
         return loansWithUsers as Loan[];
@@ -812,7 +826,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           const userMap = new Map(currentUsers.map(u => [u.id, u]));
           const reservationsWithUsers = fetchedReservations.map(r => ({ 
             ...r, 
-            user: userMap.get(r.user_id) || { id: r.user_id, name: 'Usuario Desconocido', role: 'Docente' } 
+            user: userMap.get(r.user?.id) || { id: r.user?.id || 'unknown', name: 'Usuario Desconocido', role: 'Docente' } 
           } as Reservation));
           return reservationsWithUsers;
         });
@@ -997,12 +1011,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     
     try {
       console.log('Refreshing all data...');
-      
       // Crear timeout para evitar carga infinita
-      const timeoutPromise = new Promise((_, reject) => {
+      const timeoutPromise = new Promise<never>((_, reject) => {
         setTimeout(() => reject(new Error('Timeout en carga de datos de la aplicación')), 15000);
       });
-      
+
       // Cargar todos los datos en paralelo usando Promise.allSettled
       const dataPromise = Promise.allSettled([
         getUsers(100, 0),
@@ -1021,73 +1034,92 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           return [];
         }),
       ]);
-      
-      const [fetchedUsers, fetchedResources, fetchedCategories, fetchedLoans, fetchedReservations, fetchedMeetings, fetchedAreas, fetchedGrades, fetchedHours] = await Promise.race([dataPromise, timeoutPromise]);
-      
-      // Procesar resultados
-      const users = fetchedUsers.status === 'fulfilled' ? fetchedUsers.value || [] : [];
-      const resources = fetchedResources.status === 'fulfilled' ? fetchedResources.value || [] : [];
-      const categories = fetchedCategories.status === 'fulfilled' ? fetchedCategories.value || [] : [];
-      const loans = fetchedLoans.status === 'fulfilled' ? fetchedLoans.value || [] : [];
-      const reservations = fetchedReservations.status === 'fulfilled' ? fetchedReservations.value || [] : [];
-      const meetings = fetchedMeetings.status === 'fulfilled' ? fetchedMeetings.value || [] : [];
-      const areas = fetchedAreas.status === 'fulfilled' ? fetchedAreas.value || [] : [];
-      const grades = fetchedGrades.status === 'fulfilled' ? fetchedGrades.value || [] : [];
-      const hours = fetchedHours.status === 'fulfilled' ? fetchedHours.value || [] : [];
-      
-      // Establecer usuarios primero
-      setUsers(users);
-      
-      // Mapear datos que dependen de usuarios
-      const userMap = new Map(users.map(u => [u.id, u]));
-      
-      // Función para validar fechas
-      const isValidDate = (d: any): d is Date => d instanceof Date && !isNaN(d.getTime());
-      
-      // Convertir fechas de strings a objetos Date para loans
-      const processedLoans = loans.map(l => {
-        const loanDate = new Date(l.loanDate);
-        const returnDate = l.returnDate ? new Date(l.returnDate) : undefined;
-        return {
-          ...l,
-          loanDate: isValidDate(loanDate) ? loanDate : new Date(),
-          returnDate: returnDate && isValidDate(returnDate) ? returnDate : undefined,
-          user: userMap.get(l.user_id) || { id: l.user_id, name: 'Usuario Desconocido', role: 'Docente' }
-        };
-      });
-      
-      // Convertir fechas de strings a objetos Date para reservations
-      const processedReservations = reservations.map(r => {
-        const startTime = new Date(r.startTime);
-        const endTime = r.endTime ? new Date(r.endTime) : undefined;
-        
-        let user = r.user;
-        if (!user || !user.id) {
-          user = userMap.get(r.user_id) || { 
-            id: r.user_id || 'unknown', 
-            name: 'Usuario Desconocido', 
-            role: 'Docente' as const 
+
+      // Esperar a que se complete la carga de datos o ocurra el timeout
+      const results = await Promise.race([
+        dataPromise.then(result => ({ type: 'data' as const, result })),
+        timeoutPromise
+      ]);
+
+      if (results.type === 'data') {
+        const [fetchedUsers, fetchedResources, fetchedCategories, fetchedLoans, fetchedReservations, fetchedMeetings, fetchedAreas, fetchedGrades, fetchedHours] = results.result;
+
+        // Procesar resultados
+        const users = fetchedUsers.status === 'fulfilled' ? fetchedUsers.value || [] : [];
+        const resources = fetchedResources.status === 'fulfilled' ? fetchedResources.value || [] : [];
+        const categories = fetchedCategories.status === 'fulfilled' ? fetchedCategories.value || [] : [];
+        const loans = fetchedLoans.status === 'fulfilled' ? fetchedLoans.value || [] : [];
+        const reservations = fetchedReservations.status === 'fulfilled' ? fetchedReservations.value || [] : [];
+        const meetings = fetchedMeetings.status === 'fulfilled' ? fetchedMeetings.value || [] : [];
+        const areas = fetchedAreas.status === 'fulfilled' ? fetchedAreas.value || [] : [];
+        const grades = fetchedGrades.status === 'fulfilled' ? fetchedGrades.value || [] : [];
+        const hours = fetchedHours.status === 'fulfilled' ? fetchedHours.value || [] : [];
+
+        // Establecer usuarios primero
+        setUsers(users);
+
+        // Mapear datos que dependen de usuarios
+        const userMap = new Map(users.map(u => [u.id, u]));
+
+        // Función para validar fechas
+        const isValidDate = (d: any): d is Date => d instanceof Date && !isNaN(d.getTime());
+
+        // Convertir fechas de strings a objetos Date para loans
+        const processedLoans = loans.map(l => {
+          console.log('refreshAllData: Procesando préstamo', l.id, {
+            loanDate: l.loanDate,
+            returnDate: l.returnDate,
+            status: l.status,
+            userId: l.user?.id,
+            userName: l.user?.name
+          });
+
+          const loanDate = new Date(l.loanDate);
+          const returnDate = l.returnDate ? new Date(l.returnDate) : undefined;
+
+          return {
+            ...l,
+            loanDate: isValidDate(loanDate) ? loanDate : new Date(),
+            returnDate: returnDate && isValidDate(returnDate) ? returnDate : undefined,
+            // El usuario ya viene completo del servidor, solo aseguramos que esté presente
+            user: l.user || { id: 'unknown', name: 'Usuario Desconocido', role: 'Docente' }
           };
-        }
-        
-        return {
-          ...r,
-          startTime: isValidDate(startTime) ? startTime : new Date(),
-          endTime: endTime && isValidDate(endTime) ? endTime : undefined,
-          user: user
-        };
-      });
-      
-      setLoans(processedLoans as Loan[]);
-      setReservations(processedReservations as Reservation[]);
-      setCategories(categories);
-      setMeetings(meetings.map(m => ({ ...m, date: new Date(m.date) })));
-      setResources(resources);
-      setAreas(areas);
-      setGrades(grades);
-      setPedagogicalHours(hours);
-      
-      console.log('All data refreshed successfully');
+        });
+
+        // Convertir fechas de strings a objetos Date para reservations
+        const processedReservations = reservations.map(r => {
+          const startTime = new Date(r.startTime);
+          const endTime = r.endTime ? new Date(r.endTime) : undefined;
+
+          let user = r.user;
+          if (!user || !user.id) {
+            user = userMap.get(r.user_id) || {
+              id: r.user_id || 'unknown',
+              name: 'Usuario Desconocido',
+              role: 'Docente' as const
+            };
+          }
+
+          return {
+            ...r,
+            startTime: isValidDate(startTime) ? startTime : new Date(),
+            endTime: endTime && isValidDate(endTime) ? endTime : undefined,
+            user: user
+          };
+        });
+
+        setLoans(processedLoans as Loan[]);
+        setReservations(processedReservations as Reservation[]);
+        setCategories(categories);
+        setMeetings(meetings.map(m => ({ ...m, date: new Date(m.date) })));
+        setResources(resources);
+        setAreas(areas);
+        setPedagogicalHours(hours);
+
+        console.log('All data refreshed successfully');
+      } else {
+        throw new Error('Timeout en carga de datos de la aplicación');
+      }
     } catch (error) {
       console.error('Error refreshing all data:', error);
     } finally {

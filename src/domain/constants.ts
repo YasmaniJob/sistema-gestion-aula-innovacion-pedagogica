@@ -201,47 +201,46 @@ export const categoryDetails: Record<string, {
     ],
     smartOptions: [
       {
-        label: 'Incluir Cable HDMI',
-        description: 'Cable HDMI de 3 metros',
+        label: 'Incluir Cable de Poder',
+        description: 'Cable de alimentación estándar de 2 metros',
         accessories: [{
           category: 'Cables y Adaptadores',
-          brand: 'Ugreen',
-          model: 'Cable HDMI 3m',
+          brand: 'Genérico',
+          model: 'Cable de Poder 2m',
           attributes: {
-            'Tipo': 'HDMI',
-            'Longitud': '3 metros'
+            'Tipo': 'Cable de Alimentación',
+            'Longitud': '2 metros',
+            'Conector': 'IEC C13'
           }
         }]
       },
       {
-        label: 'Kit de Presentación',
-        description: 'Cable HDMI, VGA y control remoto',
-        accessories: [
-          {
-            category: 'Cables y Adaptadores',
-            brand: 'Ugreen',
-            model: 'Cable HDMI 3m',
-            attributes: {
-              'Tipo': 'HDMI'
-            }
-          },
-          {
-            category: 'Cables y Adaptadores',
-            brand: 'Ugreen',
-            model: 'Cable VGA 3m',
-            attributes: {
-              'Tipo': 'VGA'
-            }
-          },
-          {
-            category: 'Periféricos',
-            brand: 'Genérico',
-            model: 'Control Remoto',
-            attributes: {
-              'Tipo': 'Control Remoto'
-            }
+        label: 'Incluir Cable VGA',
+        description: 'Cable VGA de 3 metros para conexiones analógicas',
+        accessories: [{
+          category: 'Cables y Adaptadores',
+          brand: 'Ugreen',
+          model: 'Cable VGA 3m',
+          attributes: {
+            'Tipo': 'VGA',
+            'Longitud': '3 metros',
+            'Conectores': 'VGA Macho a Macho'
           }
-        ]
+        }]
+      },
+      {
+        label: 'Incluir Estuche',
+        description: 'Estuche protector para transporte seguro',
+        accessories: [{
+          category: 'Periféricos',
+          brand: 'Genérico',
+          model: 'Estuche para Proyector',
+          attributes: {
+            'Tipo': 'Estuche Protector',
+            'Material': 'Nylon acolchado',
+            'Tamaño': 'Estándar'
+          }
+        }]
       }
     ],
   },

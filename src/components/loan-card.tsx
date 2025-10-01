@@ -57,6 +57,7 @@ export function LoanCard({ loan, isTeacherContext = false, onViewIncidents }: Lo
     }
     
     if (!isValidDate(loan.loanDate)) {
+      console.warn('LoanCard: Fecha de préstamo inválida para loan', loan.id, loan.loanDate);
       return { isOverdue: false, overdueDays: 0, formattedLoanDate: 'Fecha inválida', formattedReturnDate: null };
     }
 
@@ -71,6 +72,18 @@ export function LoanCard({ loan, isTeacherContext = false, onViewIncidents }: Lo
       if (overdue) {
         days = differenceInDays(today, returnDay);
       }
+      
+      console.log('LoanCard Debug:', {
+        loanId: loan.id,
+        status: loan.status,
+        returnDate: loan.returnDate,
+        returnDateType: typeof loan.returnDate,
+        returnDay: returnDay.toISOString(),
+        today: today.toISOString(),
+        isBefore: overdue,
+        days: days,
+        isValidReturnDate: isValidDate(loan.returnDate)
+      });
     }
     
     // Para préstamos devueltos, usar la fecha de devolución real

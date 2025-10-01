@@ -13,14 +13,13 @@ const getCurrentDate = (): Date => {
 };
 
 /**
- * Fetches all loans from the database.
- * The user object is just the user_id, it will be mapped in the DataProvider.
- * @returns A promise that resolves to an array of loans with user_id.
+ * Fetches all loans from the database with complete user information.
+ * @returns A promise that resolves to an array of loans with full user objects.
  */
 export async function getLoans(): Promise<any[]> {
     const { data: loanData, error: loanError } = await supabase
         .from('loans')
-        .select('*') 
+        .select('*, user:users!loans_user_id_fkey(*)')
         .order('return_date', { ascending: false, nullsFirst: false })
         .order('loan_date', { ascending: false });
 
@@ -76,6 +75,7 @@ export async function addLoan(
             resources: data.resources,
             status: initialStatus,
             loan_date: getCurrentDate().toISOString(), // Set loan date on creation
+            return_date: getCurrentDate().toISOString(), // Set return date as today for direct loans
         }])
         .select()
         .single();
@@ -103,6 +103,7 @@ export async function addLoan(
         ...newLoanData,
         user: data.user, // Use the user object passed in, as the insert doesn't return it.
         loanDate: new Date(newLoanData.loan_date),
+        returnDate: newLoanData.return_date ? new Date(newLoanData.return_date) : undefined,
     } as Loan;
 }
 
