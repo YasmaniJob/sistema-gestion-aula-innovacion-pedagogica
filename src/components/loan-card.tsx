@@ -121,12 +121,12 @@ export function LoanCard({ loan, isTeacherContext = false, onViewIncidents }: Lo
       <>
         <div className="flex items-center gap-2">
           <BookOpen className="h-4 w-4" />
-          <span>{loan.purposeDetails.area}</span>
+          <span>{loan.purposeDetails.area || 'Actividad de Aprendizaje'}</span>
         </div>
         <div className="flex items-center gap-2">
           <GraduationCap className="h-4 w-4" />
           <span>
-            {loan.purposeDetails.grade} "{loan.purposeDetails.section}"
+            {[loan.purposeDetails.grade, loan.purposeDetails.section].filter(Boolean).join(' ') || 'Información pendiente'}
           </span>
         </div>
       </>

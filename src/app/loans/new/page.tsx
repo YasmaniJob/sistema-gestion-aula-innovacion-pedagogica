@@ -58,7 +58,7 @@ import { useAccessorySelection } from '@/hooks/use-accessory-selection';
 export default function NewLoanPage() {
   useAuthorization('Admin');
   usePageTitle('Crear Préstamo');
-  const { addLoan, resources: allResources, currentUser, areas, grades } = useData();
+  const { addLoan, resources: allResources, currentUser, areas, grades, refreshLoans } = useData();
   const [selectedResources, setSelectedResources] = useState<Resource[]>([]);
   
   // Hook para manejo de accesorios
@@ -196,12 +196,19 @@ export default function NewLoanPage() {
         
         await addLoan(newLoanData, currentUser.role);
 
+        // Refrescar datos en el contexto para mostrar inmediatamente los cambios
+        await refreshLoans();
+
         toast({
             title: '¡Préstamo Registrado!',
             description: `El préstamo para ${selectedUser!.name} ha sido registrado correctamente.`,
             variant: 'default',
         });
-        router.push('/loans');
+
+        // Navegar a la página de préstamos después de un breve delay
+        setTimeout(() => {
+            router.push('/loans');
+        }, 1000);
     } catch (error: any) {
         toast({
             title: "Error al registrar el préstamo",

@@ -77,7 +77,10 @@ export async function addLoan(
             loan_date: getCurrentDate().toISOString(), // Set loan date on creation
             return_date: getCurrentDate().toISOString(), // Set return date as today for direct loans
         }])
-        .select()
+        .select(`
+            *,
+            user:users!loans_user_id_fkey(*)
+        `)
         .single();
     
     if (error) {
@@ -104,6 +107,8 @@ export async function addLoan(
         user: data.user, // Use the user object passed in, as the insert doesn't return it.
         loanDate: new Date(newLoanData.loan_date),
         returnDate: newLoanData.return_date ? new Date(newLoanData.return_date) : undefined,
+        // Asegurar que purposeDetails esté correctamente estructurado
+        purposeDetails: newLoanData.purpose_details || data.purposeDetails,
     } as Loan;
 }
 
