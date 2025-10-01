@@ -200,8 +200,8 @@ export default function LoansPage() {
       ? [...filteredPendingLoans, ...filteredActiveLoans]
       : filteredHistoricalLoans;
 
-    // Importación dinámica para evitar problemas de bundling
-    const XLSX = (await import('xlsx')).default;
+    // Importación dinámica corregida para evitar problemas de bundling
+    const XLSX = await import('xlsx');
 
     const dataToExport = loansToExport.map(loan => ({
       'Usuario': loan.user.name,
@@ -228,7 +228,7 @@ export default function LoansPage() {
       ? [...filteredPendingLoans, ...filteredActiveLoans]
       : filteredHistoricalLoans;
 
-    // Importaciones dinámicas para evitar problemas de bundling
+    // Importaciones dinámicas corregidas para evitar problemas de bundling
     const jsPDF = (await import('jspdf')).default;
     await import('jspdf-autotable');
 
