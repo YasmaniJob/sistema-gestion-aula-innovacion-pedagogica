@@ -194,17 +194,20 @@ export default function LoansPage() {
     filterWithSuggestions
   ].filter(Boolean).length;
 
-  const handleExportExcel = () => {
+  const handleExportExcel = async () => {
     // Usar datos ya filtrados según el estado actual de filtros
     const loansToExport = activeTab === 'active'
       ? [...filteredPendingLoans, ...filteredActiveLoans]
       : filteredHistoricalLoans;
 
+    // Importación dinámica para evitar problemas de bundling
+    const XLSX = (await import('xlsx')).default;
+
     const dataToExport = loansToExport.map(loan => ({
       'Usuario': loan.user.name,
       'Estado': loan.status === 'active' ? 'Activo' : loan.status === 'pending' ? 'Pendiente' : 'Devuelto',
       'Fecha': loan.loanDate.toLocaleDateString('es-ES'),
-      'Recursos': loan.resources.map(r => r.name).join(', ')
+      'Recursos': loan.resources.map((r: any) => r.name).join(', ')
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(dataToExport);
@@ -219,13 +222,16 @@ export default function LoansPage() {
     });
   };
 
-  const handleExportPDF = () => {
+  const handleExportPDF = async () => {
     // Usar datos ya filtrados según el estado actual de filtros
     const loansToExport = activeTab === 'active'
       ? [...filteredPendingLoans, ...filteredActiveLoans]
       : filteredHistoricalLoans;
 
-    // @ts-ignore - jsPDF ya está importado correctamente
+    // Importaciones dinámicas para evitar problemas de bundling
+    const jsPDF = (await import('jspdf')).default;
+    await import('jspdf-autotable');
+
     const doc = new jsPDF();
 
     // Colores profesionales (igual que en reservas)

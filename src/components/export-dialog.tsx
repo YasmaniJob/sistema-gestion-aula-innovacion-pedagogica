@@ -16,8 +16,8 @@ import { FileDown, FileText } from 'lucide-react';
 type ExportDialogProps = {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  onExportExcel: () => void;
-  onExportPDF: () => void;
+  onExportExcel: () => void | Promise<void>;
+  onExportPDF: () => void | Promise<void>;
   itemCount: number;
   itemName: string;
 };
@@ -40,14 +40,36 @@ export function ExportDialog({
           </DialogDescription>
         </DialogHeader>
         <div className="grid grid-cols-2 gap-4 py-4">
-            <Button variant="outline" size="lg" className="h-auto hover:bg-accent/50" onClick={onExportExcel}>
+            <Button
+              variant="outline"
+              size="lg"
+              className="h-auto hover:bg-accent/50"
+              onClick={async () => {
+                try {
+                  await onExportExcel();
+                } catch (error) {
+                  console.error('Error exporting Excel:', error);
+                }
+              }}
+            >
                 <div className="flex flex-col items-center gap-2 p-4">
                     <FileDown className="h-8 w-8 text-green-600" />
                     <span className="font-semibold text-base text-foreground">Excel</span>
                     <span className="text-xs text-muted-foreground">.xlsx</span>
                 </div>
             </Button>
-            <Button variant="outline" size="lg" className="h-auto hover:bg-accent/50" onClick={onExportPDF}>
+            <Button
+              variant="outline"
+              size="lg"
+              className="h-auto hover:bg-accent/50"
+              onClick={async () => {
+                try {
+                  await onExportPDF();
+                } catch (error) {
+                  console.error('Error exporting PDF:', error);
+                }
+              }}
+            >
                 <div className="flex flex-col items-center gap-2 p-4">
                     <FileText className="h-8 w-8 text-red-600" />
                     <span className="font-semibold text-base text-foreground">PDF</span>
