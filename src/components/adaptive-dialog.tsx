@@ -67,12 +67,14 @@ export function AdaptiveDialog({
     return (
       <Sheet {...dialogProps}>
         {trigger && <SheetTrigger asChild>{trigger}</SheetTrigger>}
-        <SheetContent side="bottom">
+        <SheetContent side="bottom" className="max-h-[90vh] overflow-y-auto">
           <SheetHeader className="text-left">
             <SheetTitle>{title}</SheetTitle>
             <SheetDescription>{description}</SheetDescription>
           </SheetHeader>
-          <div className="py-4">{children}</div>
+          <div className="py-4">
+            {children}
+          </div>
         </SheetContent>
       </Sheet>
     );
