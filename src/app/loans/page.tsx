@@ -25,9 +25,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { isBefore, startOfDay, isWithinInterval } from 'date-fns';
 import type { Loan, Resource } from '@/domain/types';
 import { LoanCard } from '@/components/loan-card';
+import { PendingLoanCard } from '@/components/pending-loan-card';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { IncidentsReportDialog } from '@/components/incidents-report-dialog';
+import { ExportDialog } from '@/components/export-dialog';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
@@ -57,9 +58,9 @@ export default function LoansPage() {
   const [filterWithDamages, setFilterWithDamages] = useState(false);
   const [filterWithSuggestions, setFilterWithSuggestions] = useState(false);
 
-  const [selectedIncident, setSelectedIncident] = useState<{loan: Loan, resource: Pick<Resource, 'id' | 'name' | 'brand'>} | null>(null);
   const [isExportOpen, setIsExportOpen] = useState(false);
-  const [exportFilterType, setExportFilterType] = useState<'all' | 'active' | 'overdue' | 'pending' | 'returned'>('all');
+
+  const [selectedIncident, setSelectedIncident] = useState<{loan: Loan, resource: Pick<Resource, 'id' | 'name' | 'brand'>} | null>(null);
 
   const { pendingLoans, activeLoans, historicalLoans } = useMemo(() => {
     const pending: Loan[] = [];
@@ -192,43 +193,50 @@ export default function LoansPage() {
     filterWithSuggestions
   ].filter(Boolean).length;
 
-  const handleExportLoans = (format: 'excel' | 'pdf') => {
+  const handleExportExcel = () => {
     // Usar datos ya filtrados según el estado actual de filtros
     const loansToExport = activeTab === 'active'
       ? [...filteredPendingLoans, ...filteredActiveLoans]
       : filteredHistoricalLoans;
 
-    if (format === 'excel') {
-      // @ts-ignore - XLSX no está tipado correctamente en este contexto
-      const XLSX = require('xlsx');
-      const dataToExport = loansToExport.map(loan => ({
-        'Usuario': loan.user.name,
-        'Estado': loan.status === 'active' ? 'Activo' : loan.status === 'pending' ? 'Pendiente' : 'Devuelto',
-        'Fecha': loan.loanDate.toLocaleDateString('es-ES'),
-        'Recursos': loan.resources.map(r => r.name).join(', ')
-      }));
+    // @ts-ignore - XLSX no está tipado correctamente en este contexto
+    const XLSX = require('xlsx');
+    const dataToExport = loansToExport.map(loan => ({
+      'Usuario': loan.user.name,
+      'Estado': loan.status === 'active' ? 'Activo' : loan.status === 'pending' ? 'Pendiente' : 'Devuelto',
+      'Fecha': loan.loanDate.toLocaleDateString('es-ES'),
+      'Recursos': loan.resources.map(r => r.name).join(', ')
+    }));
 
-      const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Préstamos');
-      XLSX.writeFile(workbook, `prestamos_${activeTab}_${new Date().toISOString().split('T')[0]}.xlsx`);
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Préstamos');
+    XLSX.writeFile(workbook, `prestamos_${activeTab}_${new Date().toISOString().split('T')[0]}.xlsx`);
 
-      toast({
-        title: "Exportación a Excel Exitosa",
-        description: `Se han exportado ${loansToExport.length} préstamos.`
-      });
-    } else {
-      // @ts-ignore - jsPDF no está tipado correctamente en este contexto
-      const jsPDF = require('jspdf');
-      const doc = new jsPDF();
-      doc.text('Reporte de Préstamos', 20, 20);
-      doc.save(`reporte_prestamos_${activeTab}_${new Date().toISOString().split('T')[0]}.pdf`);
+    setIsExportOpen(false);
+    toast({
+      title: "Exportación a Excel Exitosa",
+      description: `Se han exportado ${loansToExport.length} préstamos.`
+    });
+  };
 
-      toast({
-        title: "Exportación a PDF Exitosa",
-        description: `Se ha generado un reporte con ${loansToExport.length} préstamos.`
-      });
-    }
+  const handleExportPDF = () => {
+    // Usar datos ya filtrados según el estado actual de filtros
+    const loansToExport = activeTab === 'active'
+      ? [...filteredPendingLoans, ...filteredActiveLoans]
+      : filteredHistoricalLoans;
+
+    // @ts-ignore - jsPDF no está tipado correctamente en este contexto
+    const jsPDF = require('jspdf');
+    const doc = new jsPDF();
+    doc.text('Reporte de Préstamos', 20, 20);
+    doc.save(`reporte_prestamos_${activeTab}_${new Date().toISOString().split('T')[0]}.pdf`);
+
+    setIsExportOpen(false);
+    toast({
+      title: "Exportación a PDF Exitosa",
+      description: `Se ha generado un reporte con ${loansToExport.length} préstamos.`
+    });
   };
 
   if (isLoadingData) {
@@ -257,7 +265,7 @@ export default function LoansPage() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <h1 className="text-3xl font-bold flex-grow hidden sm:block">Gestión de Préstamos</h1>
         <div className="hidden sm:flex items-center gap-2">
-           <Button variant="outline" onClick={() => handleExportLoans('excel')}>
+           <Button variant="outline" onClick={() => setIsExportOpen(true)}>
              <Download className="mr-2 h-4 w-4" />
              Exportar Datos
            </Button>
@@ -441,6 +449,15 @@ export default function LoansPage() {
         onOpenChange={(isOpen) => !isOpen && setSelectedIncident(null)}
         loan={selectedIncident?.loan}
         resource={selectedIncident?.resource}
+      />
+
+      <ExportDialog
+        isOpen={isExportOpen}
+        onOpenChange={setIsExportOpen}
+        onExportExcel={handleExportExcel}
+        onExportPDF={handleExportPDF}
+        itemCount={activeTab === 'active' ? activeTabCount : filteredHistoricalLoans.length}
+        itemName={activeTab === 'active' ? 'Préstamos Activos y Pendientes' : 'Préstamos del Historial'}
       />
 
     </div>
