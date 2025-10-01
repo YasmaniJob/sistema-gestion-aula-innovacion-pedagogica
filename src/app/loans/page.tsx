@@ -205,7 +205,7 @@ export default function LoansPage() {
 
     const dataToExport = loansToExport.map(loan => ({
       'Usuario': loan.user.name,
-      'Estado': loan.status === 'active' ? 'Activo' : loan.status === 'pending' ? 'Pendiente' : 'Devuelto',
+      'Estado': loan.status === 'active' ? 'Sin devolver' : loan.status === 'pending' ? 'Pendiente' : 'Devuelto',
       'Fecha': loan.loanDate.toLocaleDateString('es-ES'),
       'Recursos': loan.resources.map((r: any) => r.name).join(', ')
     }));
@@ -296,7 +296,7 @@ export default function LoansPage() {
 
     // Preparar datos de tabla detallada
     const tableData = loansToExport.slice(0, 40).map(loan => { // Limitar a 40 para evitar PDF muy largo
-      const estado = loan.status === 'active' ? 'Activo' :
+      const estado = loan.status === 'active' ? 'Sin devolver' :
                     loan.status === 'pending' ? 'Pendiente' :
                     loan.status === 'returned' ? 'Devuelto' : 'Rechazado';
 
@@ -357,7 +357,7 @@ export default function LoansPage() {
           const status = data.cell.text?.[0];
           if (status) {
             switch(status) {
-              case 'Activo':
+              case 'Sin devolver':
                 data.cell.styles.textColor = [46, 125, 50]; // Verde oscuro
                 data.cell.styles.fontStyle = 'bold';
                 break;
