@@ -45,8 +45,6 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useData } from '@/context/data-provider-refactored';
 
-type ValidationStatus = 'idle' | 'valid' | 'invalid' | 'incomplete';
-
 export default function ReturnLoanPage() {
   const params = useParams();
   const router = useRouter();
@@ -55,14 +53,11 @@ export default function ReturnLoanPage() {
   const loanId = params.loanId as string;
   
   const [loan, setLoan] = useState<Loan | null>(null);
-  const [dni, setDni] = useState('');
   const [formattedLoanDate, setFormattedLoanDate] = useState<string | null>(null);
   const [formattedReturnDate, setFormattedReturnDate] = useState<string | null>(null);
-  const [validationStatus, setValidationStatus] = useState<ValidationStatus>('idle');
-  
-  const [showDamageReport, setShowDamageReport] = useState(false);
   const [damageReports, setDamageReports] = useState<Record<string, DamageReport>>({});
   
+  const [showDamageReport, setShowDamageReport] = useState(false);
   const [showSuggestionForm, setShowSuggestionForm] = useState(false);
   const [suggestionReports, setSuggestionReports] = useState<Record<string, SuggestionReport>>({});
   
@@ -88,22 +83,6 @@ export default function ReturnLoanPage() {
       setFormattedReturnDate(new Date().toLocaleDateString('es-ES', options));
     }
   }, [loan]);
-
-  useEffect(() => {
-    if (dni.length === 0) {
-      setValidationStatus('idle');
-      return;
-    }
-    if (dni.length < 8) {
-      setValidationStatus('incomplete');
-    } else {
-      if (dni === loan?.user.dni) {
-        setValidationStatus('valid');
-      } else {
-        setValidationStatus('invalid');
-      }
-    }
-  }, [dni, loan, resourcesReceived]);
 
   const handleDamageReportChange = useCallback((resourceId: string, report: DamageReport) => {
     setDamageReports(prev => ({ ...prev, [resourceId]: report }));
@@ -184,54 +163,6 @@ export default function ReturnLoanPage() {
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
         <div className="md:col-span-2 space-y-6">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Validar Docente</CardTitle>
-                    <CardDescription>
-                        Ingresa el DNI de <strong>{loan.user.name}</strong> para confirmar la devolución.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="flex flex-col items-center justify-center gap-4 py-8">
-                     <InputOTP 
-                        maxLength={8} 
-                        value={dni} 
-                        onChange={setDni}
-                        className={cn(
-                            (validationStatus === 'invalid' || showIncompleteMessage) && 'is-invalid'
-                        )}
-                     >
-                        <InputOTPGroup>
-                            <InputOTPSlot index={0} />
-                            <InputOTPSlot index={1} />
-                            <InputOTPSlot index={2} />
-                            <InputOTPSlot index={3} />
-                            <InputOTPSlot index={4} />
-                            <InputOTPSlot index={5} />
-                            <InputOTPSlot index={6} />
-                            <InputOTPSlot index={7} />
-                        </InputOTPGroup>
-                    </InputOTP>
-                     <div className="h-6 mt-2">
-                        {validationStatus === 'valid' && (
-                            <Badge variant="default" className="bg-green-500 hover:bg-green-500/90">
-                                <CheckCircle className="mr-2 h-4 w-4" /> DNI Válido
-                            </Badge>
-                        )}
-                        {validationStatus === 'invalid' && (
-                             <Badge variant="destructive">
-                                <XCircle className="mr-2 h-4 w-4" /> DNI Inválido
-                            </Badge>
-                        )}
-                        {showIncompleteMessage && (
-                            <p className="text-sm text-destructive">
-                                El DNI debe tener 8 dígitos.
-                            </p>
-                        )}
-
-                    </div>
-                </CardContent>
-            </Card>
-
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Button 
                   variant={showDamageReport ? 'destructive' : 'outline'}
@@ -411,7 +342,7 @@ export default function ReturnLoanPage() {
                   <Separator />
                   <AlertDialog>
                 <AlertDialogTrigger asChild>
-                    <Button size="lg" className="w-full" disabled={validationStatus !== 'valid' || isSubmitting}>
+                    <Button size="lg" className="w-full" disabled={isSubmitting}>
                         {isSubmitting ? (
                             <>
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
