@@ -189,11 +189,14 @@ export default function DocentesPage() {
       <div className="space-y-6">
         <div className="flex items-start sm:items-center justify-between gap-4">
           <h1 className="text-3xl font-bold flex-grow hidden sm:block">Gestión de Personal</h1>
-          <DocentesToolbar
-            onAdd={() => setIsAddFormOpen(true)}
-            onImport={() => setIsImportOpen(true)}
-            onExport={() => setIsExportOpen(true)}
-          />
+          {/* Desktop Toolbar - Hidden on mobile since we have FAB */}
+          <div className="hidden sm:block">
+            <DocentesToolbar
+              onAdd={() => setIsAddFormOpen(true)}
+              onImport={() => setIsImportOpen(true)}
+              onExport={() => setIsExportOpen(true)}
+            />
+          </div>
         </div>
         
         <Card>
