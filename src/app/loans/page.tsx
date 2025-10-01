@@ -25,6 +25,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { isBefore, startOfDay, isWithinInterval } from 'date-fns';
 import type { Loan, Resource } from '@/domain/types';
 import { LoanCard } from '@/components/loan-card';
+import { PendingLoanCard } from '@/components/pending-loan-card';
+import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { IncidentsReportDialog } from '@/components/incidents-report-dialog';
 import { ExportDialog } from '@/components/export-dialog';
@@ -473,7 +475,7 @@ export default function LoansPage() {
                           )}
                       </Button>
                   </SheetTrigger>
-                  <SheetContent className="flex flex-col">
+                  <SheetContent className="flex flex-col" side="right">
                       <SheetHeader>
                           <SheetTitle>Filtros de Préstamos</SheetTitle>
                           <SheetDescription>
