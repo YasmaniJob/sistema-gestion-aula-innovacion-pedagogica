@@ -87,18 +87,16 @@ export function MobileNav() {
 
   }, [pathname]);
 
-  if (!isMobile) {
-    return null;
-  }
-
+  // Helper function to check if a navigation item is active
   const isActive = (href: string) => {
     if (href === '/dashboard' || href === '/my-space') return pathname === href;
     if (href === '/inventory') return pathname.startsWith('/inventory');
     return pathname.startsWith(href);
   };
 
+  // Function to render navigation items (must be before any Hooks that use it)
   const renderNavItem = (item: { href: string; icon: React.ElementType; label: string; isAction?: boolean; action?: () => void }) => {
-    const isActive = item.href !== '#' && (item.href === '/dashboard' || item.href === '/my-space' ? pathname === item.href : pathname.startsWith(item.href));
+    const itemIsActive = item.href !== '#' && isActive(item.href);
 
     if (item.isAction && item.action) {
       return (
@@ -126,7 +124,7 @@ export function MobileNav() {
         href={item.href}
         className={cn(
           'flex flex-col items-center justify-center gap-1 rounded-lg p-2 text-muted-foreground transition-colors w-16 h-16',
-          isActive && 'text-primary'
+          itemIsActive && 'text-primary'
         )}
       >
         <item.icon className="h-5 w-5" />
@@ -137,7 +135,9 @@ export function MobileNav() {
     );
   };
 
-  const navItems = currentUser?.role === 'Admin' ? adminNavItems.slice(0, 4) : teacherNavItems.slice(0, 4);
+  if (!isMobile) {
+    return null;
+  }
 
   // Add contextual action button if needed
   const enhancedNavItems = useMemo(() => {
