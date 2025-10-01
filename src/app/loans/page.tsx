@@ -38,7 +38,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { useData } from '@/context/data-provider-refactored';
 import { useAuthorization } from '@/hooks/use-authorization';
-import { PendingLoanCard } from '@/components/pending-loan-card';
 import { usePageTitle } from '@/hooks/use-page-title';
 import { cn } from '@/lib/utils';
 
@@ -59,6 +58,8 @@ export default function LoansPage() {
   const [filterWithSuggestions, setFilterWithSuggestions] = useState(false);
 
   const [selectedIncident, setSelectedIncident] = useState<{loan: Loan, resource: Pick<Resource, 'id' | 'name' | 'brand'>} | null>(null);
+  const [isExportOpen, setIsExportOpen] = useState(false);
+  const [exportFilterType, setExportFilterType] = useState<'all' | 'active' | 'overdue' | 'pending' | 'returned'>('all');
 
   const { pendingLoans, activeLoans, historicalLoans } = useMemo(() => {
     const pending: Loan[] = [];
@@ -191,6 +192,41 @@ export default function LoansPage() {
     filterWithSuggestions
   ].filter(Boolean).length;
 
+  const handleExportLoans = (format: 'excel' | 'pdf') => {
+    // Usar datos ya filtrados según el estado actual de filtros
+    const loansToExport = activeTab === 'active'
+      ? [...filteredPendingLoans, ...filteredActiveLoans]
+      : filteredHistoricalLoans;
+
+    if (format === 'excel') {
+      const dataToExport = loansToExport.map(loan => ({
+        'Usuario': loan.user.name,
+        'Estado': loan.status === 'active' ? 'Activo' : loan.status === 'pending' ? 'Pendiente' : 'Devuelto',
+        'Fecha': loan.loanDate.toLocaleDateString('es-ES'),
+        'Recursos': loan.resources.map(r => r.name).join(', ')
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Préstamos');
+      XLSX.writeFile(workbook, `prestamos_${activeTab}_${new Date().toISOString().split('T')[0]}.xlsx`);
+
+      toast({
+        title: "Exportación a Excel Exitosa",
+        description: `Se han exportado ${loansToExport.length} préstamos.`
+      });
+    } else {
+      const doc = new jsPDF();
+      doc.text('Reporte de Préstamos', 20, 20);
+      doc.save(`reporte_prestamos_${activeTab}_${new Date().toISOString().split('T')[0]}.pdf`);
+
+      toast({
+        title: "Exportación a PDF Exitosa",
+        description: `Se ha generado un reporte con ${loansToExport.length} préstamos.`
+      });
+    }
+  };
+
   if (isLoadingUser || isLoadingData) {
       return (
           <div className="space-y-6">
@@ -217,6 +253,10 @@ export default function LoansPage() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <h1 className="text-3xl font-bold flex-grow hidden sm:block">Gestión de Préstamos</h1>
         <div className="hidden sm:flex items-center gap-2">
+           <Button variant="outline" onClick={() => handleExportLoans('excel')}>
+             <Download className="mr-2 h-4 w-4" />
+             Exportar Datos
+           </Button>
            <Button asChild>
                 <Link href="/loans/new">
                     <PlusCircle className="mr-2" />
