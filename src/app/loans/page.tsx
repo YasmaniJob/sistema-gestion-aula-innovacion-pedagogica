@@ -214,8 +214,8 @@ export default function LoansPage() {
 
     setIsExportOpen(false);
     toast({
-      title: "Exportación a Excel Exitosa",
-      description: `Se han exportado ${loansToExport.length} préstamos.`
+      title: "📊 Exportación a Excel Exitosa",
+      description: `Se han exportado ${loansToExport.length} préstamos con todos los filtros aplicados.`
     });
   };
 
@@ -384,8 +384,8 @@ export default function LoansPage() {
 
     setIsExportOpen(false);
     toast({
-      title: "Exportación a PDF Exitosa",
-      description: `Se ha generado un reporte profesional con ${Math.min(loansToExport.length, 40)} préstamos.`
+      title: "📄 Exportación a PDF Exitosa",
+      description: `Se ha generado un reporte profesional con ${Math.min(loansToExport.length, 40)} préstamos y estadísticas resumidas.`
     });
   };
 
