@@ -44,7 +44,7 @@ import { cn } from '@/lib/utils';
 export default function LoansPage() {
   useAuthorization('Admin');
   usePageTitle('Gestión de Préstamos');
-  const { loans, approveLoan, rejectLoan, isLoadingUser, isLoadingData } = useData();
+  const { loans, approveLoan, rejectLoan, isLoadingData } = useData();
   const [activeTab, setActiveTab] = useState('active');
   
   const { toast } = useToast();
@@ -199,6 +199,8 @@ export default function LoansPage() {
       : filteredHistoricalLoans;
 
     if (format === 'excel') {
+      // @ts-ignore - XLSX no está tipado correctamente en este contexto
+      const XLSX = require('xlsx');
       const dataToExport = loansToExport.map(loan => ({
         'Usuario': loan.user.name,
         'Estado': loan.status === 'active' ? 'Activo' : loan.status === 'pending' ? 'Pendiente' : 'Devuelto',
@@ -216,6 +218,8 @@ export default function LoansPage() {
         description: `Se han exportado ${loansToExport.length} préstamos.`
       });
     } else {
+      // @ts-ignore - jsPDF no está tipado correctamente en este contexto
+      const jsPDF = require('jspdf');
       const doc = new jsPDF();
       doc.text('Reporte de Préstamos', 20, 20);
       doc.save(`reporte_prestamos_${activeTab}_${new Date().toISOString().split('T')[0]}.pdf`);
@@ -227,7 +231,7 @@ export default function LoansPage() {
     }
   };
 
-  if (isLoadingUser || isLoadingData) {
+  if (isLoadingData) {
       return (
           <div className="space-y-6">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -329,20 +333,20 @@ export default function LoansPage() {
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                 />
                             </div>
-                            
+
                             <Separator />
 
                             {activeTab === 'active' && (
                                 <div className="flex items-center justify-between rounded-lg border p-3">
                                     <Label htmlFor="overdue-filter">Mostrar solo vencidos</Label>
-                                    <Switch 
-                                        id="overdue-filter" 
+                                    <Switch
+                                        id="overdue-filter"
                                         checked={showOnlyOverdue}
                                         onCheckedChange={setShowOnlyOverdue}
                                     />
                                 </div>
                             )}
-                            
+
                             {activeTab === 'historical' && (
                                 <div className="space-y-4">
                                     <div>
@@ -353,8 +357,8 @@ export default function LoansPage() {
                                         <Label htmlFor="damages-filter" className="flex items-center gap-2">
                                             <ShieldAlert className="h-4 w-4 text-destructive" /> Con Daños
                                         </Label>
-                                        <Switch 
-                                            id="damages-filter" 
+                                        <Switch
+                                            id="damages-filter"
                                             checked={filterWithDamages}
                                             onCheckedChange={setFilterWithDamages}
                                         />
@@ -363,8 +367,8 @@ export default function LoansPage() {
                                         <Label htmlFor="suggestions-filter" className="flex items-center gap-2">
                                             <MessageSquarePlus className="h-4 w-4 text-amber-600" /> Con Sugerencias
                                         </Label>
-                                        <Switch 
-                                            id="suggestions-filter" 
+                                        <Switch
+                                            id="suggestions-filter"
                                             checked={filterWithSuggestions}
                                             onCheckedChange={setFilterWithSuggestions}
                                         />
