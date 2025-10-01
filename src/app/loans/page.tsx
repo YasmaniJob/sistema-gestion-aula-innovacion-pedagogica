@@ -25,8 +25,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { isBefore, startOfDay, isWithinInterval } from 'date-fns';
 import type { Loan, Resource } from '@/domain/types';
 import { LoanCard } from '@/components/loan-card';
-import { PendingLoanCard } from '@/components/pending-loan-card';
-import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { IncidentsReportDialog } from '@/components/incidents-report-dialog';
 import { ExportDialog } from '@/components/export-dialog';
 import { Input } from '@/components/ui/input';
@@ -229,13 +228,165 @@ export default function LoansPage() {
     // @ts-ignore - jsPDF no está tipado correctamente en este contexto
     const jsPDF = require('jspdf');
     const doc = new jsPDF();
-    doc.text('Reporte de Préstamos', 20, 20);
-    doc.save(`reporte_prestamos_${activeTab}_${new Date().toISOString().split('T')[0]}.pdf`);
+
+    // Colores profesionales (igual que en reservas)
+    const primaryColor: [number, number, number] = [41, 128, 185]; // Azul
+    const secondaryColor: [number, number, number] = [52, 152, 219]; // Azul claro
+    const accentColor: [number, number, number] = [46, 204, 113]; // Verde
+    const textColor: [number, number, number] = [44, 62, 80]; // Gris oscuro
+
+    // Encabezado profesional
+    doc.setFillColor(...primaryColor);
+    doc.rect(0, 0, 210, 35, 'F');
+
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.text('REPORTE DE PRÉSTAMOS', 14, 20);
+
+    // Subtítulo con información del filtro
+    const tabText = activeTab === 'active' ? 'Activos y Pendientes' : 'Historial';
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Reporte: ${tabText}`, 14, 28);
+
+    // Fecha de generación
+    doc.setFontSize(10);
+    doc.text(`Generado el: ${new Date().toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })}`, 14, 32);
+
+    // Estadísticas resumidas
+    doc.setTextColor(...textColor);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Resumen Ejecutivo', 14, 50);
+
+    const stats = {
+      total: loansToExport.length,
+      activos: loansToExport.filter(l => l.status === 'active').length,
+      pendientes: loansToExport.filter(l => l.status === 'pending').length,
+      aprendizaje: loansToExport.filter(l => l.purpose === 'aprendizaje').length,
+      institucional: loansToExport.filter(l => l.purpose === 'institucional').length,
+      totalRecursos: loansToExport.reduce((sum, loan) => sum + loan.resources.length, 0)
+    };
+
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'normal');
+    let yPos = 58;
+
+    // Estadísticas en dos columnas
+    doc.text(`• Total de préstamos: ${stats.total}`, 14, yPos);
+    doc.text(`• Préstamos activos: ${stats.activos}`, 110, yPos);
+    yPos += 6;
+    doc.text(`• Préstamos pendientes: ${stats.pendientes}`, 14, yPos);
+    doc.text(`• Recursos prestados: ${stats.totalRecursos}`, 110, yPos);
+    yPos += 6;
+    doc.text(`• Propósito académico: ${stats.aprendizaje}`, 14, yPos);
+    doc.text(`• Propósito institucional: ${stats.institucional}`, 110, yPos);
+
+    // Preparar datos de tabla detallada
+    const tableData = loansToExport.slice(0, 40).map(loan => { // Limitar a 40 para evitar PDF muy largo
+      const estado = loan.status === 'active' ? 'Activo' :
+                    loan.status === 'pending' ? 'Pendiente' :
+                    loan.status === 'returned' ? 'Devuelto' : 'Rechazado';
+
+      const recursosText = loan.resources.map(r => `${r.name} (${r.brand || 'N/A'})`).join(', ');
+      const truncatedRecursos = recursosText.length > 45 ? recursosText.substring(0, 42) + '...' : recursosText;
+
+      return [
+        loan.user.name,
+        estado,
+        loan.loanDate.toLocaleDateString('es-ES'),
+        loan.returnDate ? loan.returnDate.toLocaleDateString('es-ES') : 'N/A',
+        loan.purpose === 'aprendizaje' ? 'Académico' : 'Institucional',
+        truncatedRecursos
+      ];
+    });
+
+    // Título de tabla
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Detalle de Préstamos', 14, yPos + 15);
+
+    // Crear tabla con colores profesionales
+    // @ts-ignore - autoTable no está tipado correctamente
+    doc.autoTable({
+      startY: yPos + 22,
+      head: [['Usuario', 'Estado', 'Fecha Préstamo', 'Fecha Devolución', 'Propósito', 'Recursos']],
+      body: tableData,
+      theme: 'grid',
+      headStyles: {
+        fillColor: primaryColor,
+        textColor: 255,
+        fontSize: 9,
+        fontStyle: 'bold',
+        halign: 'center'
+      },
+      bodyStyles: {
+        fontSize: 8,
+        cellPadding: 2
+      },
+      columnStyles: {
+        0: { halign: 'left', cellWidth: 35 },   // Usuario
+        1: { halign: 'center', cellWidth: 20 }, // Estado
+        2: { halign: 'center', cellWidth: 25 }, // Fecha Préstamo
+        3: { halign: 'center', cellWidth: 25 }, // Fecha Devolución
+        4: { halign: 'center', cellWidth: 20 }, // Propósito
+        5: { halign: 'left', cellWidth: 45 }    // Recursos
+      },
+      alternateRowStyles: {
+        fillColor: [248, 249, 250]
+      },
+      styles: {
+        lineColor: [200, 200, 200],
+        lineWidth: 0.1
+      },
+      didParseCell: function(data: any) {
+        // Colorear estados
+        if (data.column.index === 1) { // Columna Estado
+          const status = data.cell.text?.[0];
+          if (status) {
+            switch(status) {
+              case 'Activo':
+                data.cell.styles.textColor = [46, 125, 50]; // Verde oscuro
+                data.cell.styles.fontStyle = 'bold';
+                break;
+              case 'Pendiente':
+                data.cell.styles.textColor = [255, 193, 7]; // Amarillo
+                data.cell.styles.fontStyle = 'bold';
+                break;
+              case 'Devuelto':
+                data.cell.styles.textColor = [76, 175, 80]; // Verde
+                data.cell.styles.fontStyle = 'bold';
+                break;
+            }
+          }
+        }
+      }
+    });
+
+    // Pie de página
+    const pageCount = doc.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(128, 128, 128);
+      doc.text(`Página ${i} de ${pageCount}`, 14, 285);
+      doc.text('Sistema de Gestión - Aula de Innovación Pedagógica', 196, 285, { align: 'right' });
+    }
+
+    const filterText = activeTab === 'active' ? 'activos_pendientes' : 'historial';
+    doc.save(`reporte_prestamos_${filterText}_${new Date().toISOString().split('T')[0]}.pdf`);
 
     setIsExportOpen(false);
     toast({
       title: "Exportación a PDF Exitosa",
-      description: `Se ha generado un reporte con ${loansToExport.length} préstamos.`
+      description: `Se ha generado un reporte profesional con ${Math.min(loansToExport.length, 40)} préstamos.`
     });
   };
 
