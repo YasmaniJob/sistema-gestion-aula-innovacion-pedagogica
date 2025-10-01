@@ -200,8 +200,6 @@ export default function LoansPage() {
       ? [...filteredPendingLoans, ...filteredActiveLoans]
       : filteredHistoricalLoans;
 
-    // @ts-ignore - XLSX no está tipado correctamente en este contexto
-    const XLSX = require('xlsx');
     const dataToExport = loansToExport.map(loan => ({
       'Usuario': loan.user.name,
       'Estado': loan.status === 'active' ? 'Activo' : loan.status === 'pending' ? 'Pendiente' : 'Devuelto',
@@ -227,8 +225,7 @@ export default function LoansPage() {
       ? [...filteredPendingLoans, ...filteredActiveLoans]
       : filteredHistoricalLoans;
 
-    // @ts-ignore - jsPDF no está tipado correctamente en este contexto
-    const jsPDF = require('jspdf');
+    // @ts-ignore - jsPDF ya está importado correctamente
     const doc = new jsPDF();
 
     // Colores profesionales (igual que en reservas)
