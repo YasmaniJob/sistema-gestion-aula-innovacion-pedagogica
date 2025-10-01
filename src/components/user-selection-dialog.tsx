@@ -4,6 +4,7 @@ import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
+  DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Search, User, Loader2, X } from 'lucide-react';
@@ -98,6 +99,10 @@ export function UserSelectionDialog({
           maxHeight: '80vh'
         }}
       >
+        <DialogTitle className="sr-only">
+          Seleccionar Usuario para Préstamo
+        </DialogTitle>
+
         {/* Header personalizado */}
         <div className="flex items-center justify-between p-4 border-b">
           <div className="flex-1">
