@@ -58,5 +58,5 @@ export const contextualAddRoutes = {
     '/reservations': '/reservations/new',
     '/my-reservations': '/my-reservations/new',
     '/meetings': '/meetings/new',
-    '/docentes': '/docentes/add',
+    // '/docentes': '/docentes/add', // Comentado - usa modal en su lugar
 };
