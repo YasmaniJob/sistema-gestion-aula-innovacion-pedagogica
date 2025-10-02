@@ -29,10 +29,10 @@ import { Input } from '@/components/ui/input';
 const ITEMS_PER_PAGE = 10;
 
 export default function DocentesPage() {
-  useAuthorization('Admin');
+  useAuthorization({ requiredRole: 'Admin' });
   usePageTitle('Gestión de Personal');
   
-  const { users, appName, schoolName, addUser, updateUser, deleteUser, addMultipleUsers } = useData();
+  const { users, addUser, updateUser, deleteUser, addMultipleUsers } = useData();
   const { toast } = useToast();
   const { setHeaderActions } = useSidebar();
 
@@ -162,11 +162,17 @@ export default function DocentesPage() {
     } else {
         const doc = new jsPDF();
         doc.setFontSize(18);
-        doc.text(`Lista de Personal - ${appName}`, 14, 22);
+        doc.text('Lista de Personal - AIP', 14, 22);
         doc.setFontSize(11);
-        doc.text(`${schoolName}`, 14, 30);
+        doc.text('Mi Institución Educativa', 14, 30);
         doc.setTextColor(100);
-        doc.text(`Generado el: ${format(new Date(), 'dd/MM/yyyy h:mm a')}`, 14, 36);
+        doc.text(`Generado el: ${new Date().toLocaleDateString('es-ES', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        })}`, 14, 36);
 
         (doc as any).autoTable({
             startY: 42,
@@ -254,7 +260,7 @@ export default function DocentesPage() {
           onSubmit={handleFormSubmit}
           onCancel={() => handleModalOpenChange(false)}
           mode={editingUser ? 'edit' : 'add'}
-          initialData={editingUser || { role: 'Docente' }}
+          initialData={editingUser ? editingUser : { role: 'Docente' }}
         />
       </AdaptiveDialog>
 

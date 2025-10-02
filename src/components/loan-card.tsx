@@ -8,6 +8,13 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import {
   BookOpen,
   GraduationCap,
   Calendar,
@@ -23,6 +30,7 @@ import {
   Zap,
   PackageX,
   Sparkles,
+  MessageCircle,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { format, isBefore, startOfDay, differenceInDays } from 'date-fns';
@@ -45,6 +53,7 @@ const isValidDate = (d: any): d is Date => {
 
 export function LoanCard({ loan, isTeacherContext = false, onViewIncidents }: LoanCardProps) {
   const [isClient, setIsClient] = useState(false);
+  const [showNotesDialog, setShowNotesDialog] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
@@ -240,8 +249,14 @@ export function LoanCard({ loan, isTeacherContext = false, onViewIncidents }: Lo
           </p>
           <div className="flex flex-wrap gap-2">
             {(() => {
+              // Declarar variables fuera del IIFE para acceso externo
+              let mainResources: any[] = [];
+              let otherSmartAccessories: any[] = [];
+              let chargers: any[] = [];
+              const elements: JSX.Element[] = [];
+              
               // Separar recursos principales de accesorios y opciones inteligentes
-              const mainResources = loan.resources.filter(resource => {
+              mainResources = loan.resources.filter(resource => {
                 // Excluir opciones inteligentes identificadas por ID sintético
                 if (resource.id && resource.id.startsWith('smart-')) {
                   return false;
@@ -281,7 +296,7 @@ export function LoanCard({ loan, isTeacherContext = false, onViewIncidents }: Lo
                        name.includes('keyboard');
               });
               
-              const chargers = smartAccessories.filter(resource => {
+              chargers = smartAccessories.filter(resource => {
                 // Incluir opciones inteligentes de cargadores por ID sintético
                 if (resource.id && resource.id.startsWith('smart-') && resource.name) {
                   const name = resource.name.toLowerCase();
@@ -296,7 +311,7 @@ export function LoanCard({ loan, isTeacherContext = false, onViewIncidents }: Lo
                 );
               });
               
-              const otherSmartAccessories = smartAccessories.filter(resource => {
+              otherSmartAccessories = smartAccessories.filter(resource => {
                 // Para opciones inteligentes por ID sintético
                 if (resource.id && resource.id.startsWith('smart-') && resource.name) {
                   const name = resource.name.toLowerCase();
@@ -311,8 +326,6 @@ export function LoanCard({ loan, isTeacherContext = false, onViewIncidents }: Lo
                 );
               });
               
-              const elements = [];
-              
               // Mostrar recursos principales
               mainResources.forEach((resource) => {
                 const damages = hasDamageReports(resource.id);
@@ -321,7 +334,7 @@ export function LoanCard({ loan, isTeacherContext = false, onViewIncidents }: Lo
                 
                 // Verificar si hay cargadores para este recurso principal
                 const hasCharger = chargers.length > 0 && (
-                  resource.category === 'Laptops' || resource.category === 'Tablets' ||
+                  (resource as any).category === 'Laptops' || (resource as any).category === 'Tablets' ||
                   (resource.name && (resource.name.toLowerCase().includes('laptop') || resource.name.toLowerCase().includes('tablet')))
                 );
                 
@@ -347,6 +360,13 @@ export function LoanCard({ loan, isTeacherContext = false, onViewIncidents }: Lo
                                  </button>
                             )}
                         </div>
+                    )}
+                    {loan.notes && (
+                      <div className="flex items-center gap-1.5 ml-2 pl-2 border-l border-border">
+                        <button onClick={() => setShowNotesDialog(true)} aria-label="Ver nota del préstamo">
+                          <MessageCircle className="h-4 w-4 text-blue-600" />
+                        </button>
+                      </div>
                     )}
                   </Badge>
                 );
@@ -391,6 +411,13 @@ export function LoanCard({ loan, isTeacherContext = false, onViewIncidents }: Lo
                             )}
                         </div>
                     )}
+                    {loan.notes && (
+                      <div className="flex items-center gap-1.5 ml-2 pl-2 border-l border-border">
+                        <button onClick={() => setShowNotesDialog(true)} aria-label="Ver nota del préstamo">
+                          <MessageCircle className="h-4 w-4 text-blue-600" />
+                        </button>
+                      </div>
+                    )}
                   </Badge>
                 );
               });
@@ -398,7 +425,7 @@ export function LoanCard({ loan, isTeacherContext = false, onViewIncidents }: Lo
               // Mostrar cargadores independientes (que no están asociados a laptops/tablets)
               chargers.forEach((charger) => {
                 const hasMainResource = mainResources.some(resource => 
-                  resource.category === 'Laptops' || resource.category === 'Tablets' ||
+                  (resource as any).category === 'Laptops' || (resource as any).category === 'Tablets' ||
                   (resource.name && (resource.name.toLowerCase().includes('laptop') || resource.name.toLowerCase().includes('tablet')))
                 );
                 
@@ -431,6 +458,13 @@ export function LoanCard({ loan, isTeacherContext = false, onViewIncidents }: Lo
                               )}
                           </div>
                       )}
+                      {loan.notes && (
+                        <div className="flex items-center gap-1.5 ml-2 pl-2 border-l border-border">
+                          <button onClick={() => setShowNotesDialog(true)} aria-label="Ver nota del préstamo">
+                            <MessageCircle className="h-4 w-4 text-blue-600" />
+                          </button>
+                        </div>
+                      )}
                     </Badge>
                   );
                 }
@@ -440,8 +474,56 @@ export function LoanCard({ loan, isTeacherContext = false, onViewIncidents }: Lo
             })()}
           </div>
         </div>
+
+        {/* Botón de respaldo para notas - aparece si hay notas pero no hay recursos visibles */}
+        {loan.notes && loan.resources.length === 0 && (
+          <div className="pt-2 border-t">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowNotesDialog(true)}
+              className="gap-2"
+            >
+              <MessageCircle className="h-4 w-4 text-blue-600" />
+              Ver Notas del Préstamo
+            </Button>
+          </div>
+        )}
+
+        {/* Modal para mostrar las notas del préstamo */}
+        <NotesDialog
+          loan={loan}
+          open={showNotesDialog}
+          onOpenChange={setShowNotesDialog}
+        />
       </CardContent>
     </Card>
+  );
+}
+
+// Modal para mostrar las notas del préstamo
+function NotesDialog({ loan, open, onOpenChange }: { loan: Loan; open: boolean; onOpenChange: (open: boolean) => void }) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <MessageCircle className="h-5 w-5 text-blue-600" />
+            Notas del Préstamo
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="p-4 bg-muted/50 rounded-lg">
+            <p className="text-sm text-muted-foreground mb-2">Solicitante:</p>
+            <p className="font-semibold">{loan.user?.name || 'Usuario Desconocido'}</p>
+          </div>
+          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-sm text-blue-700 mb-2">Notas adicionales:</p>
+            <p className="text-sm leading-relaxed">{loan.notes || 'No hay notas adicionales para este préstamo.'}</p>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
