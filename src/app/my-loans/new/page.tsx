@@ -46,7 +46,6 @@ import { statusStyles } from '@/domain/constants';
 import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { UserSelector } from '@/components/user-selector';
 import { CategorySelector } from '@/components/category-selector';
@@ -87,8 +86,6 @@ export default function NewLoanPage() {
   const [internalUsageDetails, setInternalUsageDetails] = useState('');
   const [selectedUser, setSelectedUser] = useState<LoanUser | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const [loanNotes, setLoanNotes] = useState('');
 
   // States for the dynamic selects
   const [selectedArea, setSelectedArea] = useState<string>('');
@@ -199,7 +196,6 @@ export default function NewLoanPage() {
         ...smartOptionAccessories,
         ...(chargerIncluded ? availableChargers.slice(0, 1) : []) // Mantener compatibilidad con cargador manual
       ].map(r => ({ id: r.id, name: r.name, brand: r.brand })),
-      notes: loanNotes.trim() || undefined, // Incluir notas solo si no están vacías
     };
 
     await addLoan(newLoanData, currentUser.role);
@@ -276,23 +272,6 @@ export default function NewLoanPage() {
                     onUserSelect={setSelectedUser}
                     disabled={currentUser?.role === 'Docente'}
                 />
-
-                {/* Campo de notas básico - implementación segura */}
-                <div className="space-y-2 border-t pt-6">
-                  <Label htmlFor="loan-notes" className="text-sm font-medium">
-                    Notas adicionales (opcional)
-                  </Label>
-                  <Textarea
-                    id="loan-notes"
-                    placeholder="Agrega cualquier información adicional sobre tu solicitud de préstamo..."
-                    value={loanNotes}
-                    onChange={(e) => setLoanNotes(e.target.value)}
-                    className="min-h-[80px]"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Puedes agregar detalles específicos sobre el uso de los recursos, restricciones especiales, o cualquier otra información relevante.
-                  </p>
-                </div>
 
               {loanPurpose === 'aprendizaje' && (
                 <div className="space-y-4 border-t pt-6">
@@ -468,15 +447,6 @@ export default function NewLoanPage() {
                     <div className="flex flex-col">
                       <span className="text-muted-foreground">Detalles Académicos:</span>
                       <span className="font-semibold">{[selectedArea, selectedGrade, selectedSection].filter(Boolean).join(' - ')}</span>
-                    </div>
-                  </div>
-                )}
-                {loanNotes.trim() && (
-                  <div className="flex items-start gap-3">
-                    <MessageCircle className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
-                    <div className="flex flex-col">
-                      <span className="text-muted-foreground">Notas adicionales:</span>
-                      <span className="font-semibold text-sm">{loanNotes}</span>
                     </div>
                   </div>
                 )}

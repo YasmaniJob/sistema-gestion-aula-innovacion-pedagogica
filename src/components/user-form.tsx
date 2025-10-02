@@ -1,5 +1,6 @@
 
-import { useEffect } from 'react';
+'use client';
+
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -20,7 +21,9 @@ const userFormSchema = z.object({
   name: z.string().min(3, 'El nombre debe tener al menos 3 caracteres.'),
   dni: z.string().length(8, 'El DNI debe tener exactamente 8 caracteres.').regex(/^\d+$/, 'El DNI solo debe contener números.'),
   email: z.string().email('El correo electrónico no es válido.'),
-  role: z.enum(['Admin', 'Docente']),
+  role: z.enum(['Admin', 'Docente'], {
+    required_error: 'Debes seleccionar un rol.',
+  }),
 });
 
 export type UserFormData = z.infer<typeof userFormSchema>;
@@ -36,25 +39,13 @@ type UserFormProps = {
 export function UserForm({ onSubmit, onCancel, mode, initialData, isEditingRole = true }: UserFormProps) {
   const form = useForm<UserFormData>({
     resolver: zodResolver(userFormSchema),
-    defaultValues: {
+    defaultValues: initialData || {
       name: '',
       dni: '',
       email: '',
-      role: 'Docente' as const,
+      role: undefined,
     },
   });
-
-  // Reset form when initialData changes
-  useEffect(() => {
-    if (initialData) {
-      form.reset({
-        name: initialData.name || '',
-        dni: initialData.dni || '',
-        email: initialData.email || '',
-        role: initialData.role || 'Docente',
-      });
-    }
-  }, [initialData, form]);
 
   const isLoading = form.formState.isSubmitting;
 
@@ -109,7 +100,7 @@ export function UserForm({ onSubmit, onCancel, mode, initialData, isEditingRole 
                   <FormLabel>Rol</FormLabel>
                   <Select 
                     onValueChange={field.onChange} 
-                    value={field.value}
+                    defaultValue={field.value}
                     disabled={!isEditingRole}
                   >
                     <FormControl>

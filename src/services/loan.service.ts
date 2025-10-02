@@ -39,7 +39,6 @@ export async function getLoans(): Promise<any[]> {
             damageReports: loan.damage_reports || {},
             suggestionReports: loan.suggestion_reports || {},
             missingResources: loan.missing_resources || [],
-            notes: loan.notes || undefined, // ✅ Incluir las notas del préstamo
         }
     });
     
@@ -74,7 +73,6 @@ export async function addLoan(
             purpose: data.purpose,
             purpose_details: data.purposeDetails,
             resources: data.resources,
-            notes: data.notes || null, // Incluir notas del préstamo
             status: initialStatus,
             loan_date: getCurrentDate().toISOString(), // Set loan date on creation
             return_date: getCurrentDate().toISOString(), // Set return date as today for direct loans
