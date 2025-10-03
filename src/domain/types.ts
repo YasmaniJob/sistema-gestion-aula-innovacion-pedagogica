@@ -73,6 +73,7 @@ export type Loan = {
     damageReports?: Record<string, DamageReport>;
     suggestionReports?: Record<string, SuggestionReport>;
     missingResources?: MissingResourceReport[];
+    notes?: string; // Campo para notas adicionales del préstamo
 }
 
 export type ReservationStatus = 'Confirmada' | 'Realizada' | 'No asistió' | 'Cancelada';

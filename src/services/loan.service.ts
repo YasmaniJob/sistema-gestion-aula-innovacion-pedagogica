@@ -76,6 +76,7 @@ export async function addLoan(
             status: initialStatus,
             loan_date: getCurrentDate().toISOString(), // Set loan date on creation
             return_date: getCurrentDate().toISOString(), // Set return date as today for direct loans
+            notes: data.notes || null,
         }])
         .select(`
             *,

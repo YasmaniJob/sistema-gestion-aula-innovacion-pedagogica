@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { Loan } from '@/domain/types';
@@ -8,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Check, XCircle, Loader2, Zap } from 'lucide-react';
 import { getInitials } from '@/lib/utils';
+import { NoteButton } from '@/components/note-components';
 
 type PendingLoanCardProps = {
     loan: Loan;
@@ -31,6 +31,7 @@ export function PendingLoanCard({ loan, onApprove, onReject, isProcessing }: Pen
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
+                        <NoteButton notes={loan.notes} variant="icon" />
                         <Button size="sm" variant="destructive" onClick={() => onReject(loan.id)} disabled={isProcessing}>
                             {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="mr-2 h-4 w-4" />}
                             Rechazar
@@ -43,6 +44,12 @@ export function PendingLoanCard({ loan, onApprove, onReject, isProcessing }: Pen
                 </div>
             </CardHeader>
             <CardContent className='space-y-2'>
+                {loan.notes && (
+                    <div className="p-2 bg-blue-50 border border-blue-200 rounded-md">
+                        <p className="text-sm text-blue-900 font-medium">Notas:</p>
+                        <p className="text-sm text-blue-800 whitespace-pre-wrap">{loan.notes}</p>
+                    </div>
+                )}
                 <p className="text-sm font-medium">
                     Recursos Solicitados ({loan.resources.length})
                 </p>
@@ -54,10 +61,10 @@ export function PendingLoanCard({ loan, onApprove, onReject, isProcessing }: Pen
                             if (resource.id && resource.id.startsWith('smart-')) {
                                 return false;
                             }
-                            
+
                             // Excluir accesorios identificados por nombre
                             return resource.name && (
-                                !resource.name.toLowerCase().includes('cargador') && 
+                                !resource.name.toLowerCase().includes('cargador') &&
                                 !resource.name.toLowerCase().includes('charger') &&
                                 !resource.name.toLowerCase().includes('adaptador de corriente')
                             );
@@ -68,31 +75,30 @@ export function PendingLoanCard({ loan, onApprove, onReject, isProcessing }: Pen
                                 const name = resource.name.toLowerCase();
                                 return name.includes('cargador') || name.includes('charger') || name.includes('adaptador');
                             }
-                            
+
                             // Incluir cargadores identificados por nombre
                             return resource.name && (
-                                resource.name.toLowerCase().includes('cargador') || 
+                                resource.name.toLowerCase().includes('cargador') ||
                                 resource.name.toLowerCase().includes('charger') ||
                                 resource.name.toLowerCase().includes('adaptador de corriente')
                             );
                         });
-                        
+
                         const elements = [];
-                        
+
                         // Mostrar recursos principales
                         mainResources.forEach((resource) => {
                             // Verificar si hay cargadores para este recurso principal
                             const hasCharger = chargers.length > 0 && (
-                                resource.category === 'Laptops' || resource.category === 'Tablets' ||
                                 (resource.name && (resource.name.toLowerCase().includes('laptop') || resource.name.toLowerCase().includes('tablet')))
                             );
-                            
+
                             elements.push(
                                 <Badge key={resource.id} variant="secondary" className="font-normal">
                                     {resource.name} ({resource.brand})
                                 </Badge>
                             );
-                            
+
                             // Agregar badge separado para el cargador si existe
                              if (hasCharger) {
                                  elements.push(
@@ -103,14 +109,13 @@ export function PendingLoanCard({ loan, onApprove, onReject, isProcessing }: Pen
                                  );
                              }
                         });
-                        
+
                         // Mostrar cargadores independientes (que no están asociados a laptops/tablets)
                         chargers.forEach((charger) => {
-                            const hasMainResource = mainResources.some(resource => 
-                                resource.category === 'Laptops' || resource.category === 'Tablets' ||
+                            const hasMainResource = mainResources.some(resource =>
                                 (resource.name && (resource.name.toLowerCase().includes('laptop') || resource.name.toLowerCase().includes('tablet')))
                             );
-                            
+
                             // Solo mostrar cargadores independientes si no hay recursos principales que los incluyan
                             if (!hasMainResource) {
                                 elements.push(
@@ -121,7 +126,7 @@ export function PendingLoanCard({ loan, onApprove, onReject, isProcessing }: Pen
                                 );
                             }
                         });
-                        
+
                         return elements;
                     })()}
                 </div>
@@ -129,5 +134,3 @@ export function PendingLoanCard({ loan, onApprove, onReject, isProcessing }: Pen
         </Card>
     );
 }
-
-    

@@ -86,6 +86,7 @@ export default function NewLoanPage() {
   const [internalUsageDetails, setInternalUsageDetails] = useState('');
   const [selectedUser, setSelectedUser] = useState<LoanUser | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loanNotes, setLoanNotes] = useState('');
 
   // States for the dynamic selects
   const [selectedArea, setSelectedArea] = useState<string>('');
@@ -196,6 +197,7 @@ export default function NewLoanPage() {
         ...smartOptionAccessories,
         ...(chargerIncluded ? availableChargers.slice(0, 1) : []) // Mantener compatibilidad con cargador manual
       ].map(r => ({ id: r.id, name: r.name, brand: r.brand })),
+      notes: loanNotes.trim() !== '' ? loanNotes : undefined,
     };
 
     await addLoan(newLoanData, currentUser.role);
@@ -329,6 +331,27 @@ export default function NewLoanPage() {
                   />
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Notas Adicionales (Opcional)</CardTitle>
+              <CardDescription>
+                Agrega cualquier información adicional sobre tu solicitud de préstamo.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <Label htmlFor="loan-notes" className="text-sm font-medium">Notas</Label>
+                <textarea
+                  id="loan-notes"
+                  placeholder="Ej: Necesito estos recursos para una actividad especial en clase..."
+                  value={loanNotes}
+                  onChange={(e) => setLoanNotes(e.target.value)}
+                  className="w-full min-h-[100px] px-3 py-2 border border-input bg-background text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 rounded-md resize-none"
+                />
+              </div>
             </CardContent>
           </Card>
 
