@@ -10,9 +10,6 @@ import {
   PlusCircle,
   Search,
   X,
-  ShieldAlert,
-  MessageSquarePlus,
-  Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -27,14 +24,13 @@ import { LoanCard } from '@/components/loan-card';
 import { PendingLoanCard } from '@/components/pending-loan-card';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { IncidentsReportDialog } from '@/components/incidents-report-dialog';
-import { ExportDialog } from '@/components/export-dialog';
-import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import type { DateRange } from 'react-day-picker';
 import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { IncidentsReportDialog } from '@/components/incidents-report-dialog';
+import { ExportDialog } from '@/components/export-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useData } from '@/context/data-provider-refactored';
 import { useAuthorization } from '@/hooks/use-authorization';
@@ -56,6 +52,8 @@ export default function LoansPage() {
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [filterWithDamages, setFilterWithDamages] = useState(false);
   const [filterWithSuggestions, setFilterWithSuggestions] = useState(false);
+  const [loanTypeFilter, setLoanTypeFilter] = useState<'all' | 'aprendizaje' | 'institucional'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'pending' | 'returned'>('all');
 
   const [readNotes, setReadNotes] = useState<Set<string>>(new Set());
 
@@ -93,7 +91,15 @@ export default function LoansPage() {
     setDateRange(undefined);
     setFilterWithDamages(false);
     setFilterWithSuggestions(false);
+    setLoanTypeFilter('all');
+    setStatusFilter('all');
+    setCurrentPage(1);
   };
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, showOnlyOverdue, statusFilter, loanTypeFilter, dateRange, filterWithDamages, filterWithSuggestions]);
 
   useEffect(() => {
     clearFilters();
@@ -173,6 +179,16 @@ export default function LoansPage() {
         const matchesSearch = loan.user.name.toLowerCase().includes(searchQuery.toLowerCase());
         if (!matchesSearch) return false;
 
+        // Estado del préstamo
+        if (statusFilter !== 'all' && loan.status !== statusFilter) {
+          return false;
+        }
+
+        // Tipo de préstamo
+        if (loanTypeFilter !== 'all' && loan.purpose !== loanTypeFilter) {
+          return false;
+        }
+
         if (dateRange?.from && loan.returnDate) {
             if (!isWithinInterval(loan.returnDate, { start: dateRange.from, end: dateRange.to || new Date() })) {
                 return false;
@@ -191,7 +207,7 @@ export default function LoansPage() {
 
         return true;
     });
-  }, [historicalLoans, searchQuery, dateRange, filterWithDamages, filterWithSuggestions]);
+  }, [historicalLoans, searchQuery, statusFilter, loanTypeFilter, dateRange, filterWithDamages, filterWithSuggestions]);
 
   // Pagination logic for historical loans
   const totalPages = Math.ceil(filteredHistoricalLoans.length / itemsPerPage);
@@ -204,7 +220,9 @@ export default function LoansPage() {
     showOnlyOverdue,
     dateRange,
     filterWithDamages,
-    filterWithSuggestions
+    filterWithSuggestions,
+    loanTypeFilter !== 'all',
+    statusFilter !== 'all'
   ].filter(Boolean).length;
 
   const handleExportExcel = async () => {
@@ -277,11 +295,11 @@ export default function LoansPage() {
 
     const stats = {
       total: loansToExport.length,
-      activos: loansToExport.filter(l => l.status === 'active').length,
-      pendientes: loansToExport.filter(l => l.status === 'pending').length,
-      aprendizaje: loansToExport.filter(l => l.purpose === 'aprendizaje').length,
-      institucional: loansToExport.filter(l => l.purpose === 'institucional').length,
-      totalRecursos: loansToExport.reduce((sum, loan) => sum + loan.resources.length, 0)
+      activos: loansToExport.filter((l: Loan) => l.status === 'active').length,
+      pendientes: loansToExport.filter((l: Loan) => l.status === 'pending').length,
+      aprendizaje: loansToExport.filter((l: Loan) => l.purpose === 'aprendizaje').length,
+      institucional: loansToExport.filter((l: Loan) => l.purpose === 'institucional').length,
+      totalRecursos: loansToExport.reduce((sum: number, loan: Loan) => sum + loan.resources.length, 0)
     };
 
     doc.setFontSize(11);
@@ -297,12 +315,12 @@ export default function LoansPage() {
     doc.text(`• Propósito académico: ${stats.aprendizaje}`, 14, yPos);
     doc.text(`• Propósito institucional: ${stats.institucional}`, 110, yPos);
 
-    const tableData = loansToExport.slice(0, 40).map(loan => {
+    const tableData = loansToExport.slice(0, 40).map((loan: Loan) => {
       const estado = loan.status === 'active' ? 'Sin devolver' :
                     loan.status === 'pending' ? 'Pendiente' :
                     loan.status === 'returned' ? 'Devuelto' : 'Rechazado';
 
-      const recursosText = loan.resources.map(r => `${r.name} (${r.brand || 'N/A'})`).join(', ');
+      const recursosText = loan.resources.map((r: any) => `${r.name} (${r.brand || 'N/A'})`).join(', ');
       const truncatedRecursos = recursosText.length > 45 ? recursosText.substring(0, 42) + '...' : recursosText;
 
       return [
@@ -397,16 +415,16 @@ export default function LoansPage() {
       return (
           <div className="space-y-6">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <Skeleton className="h-10 w-64" />
+                <div className="h-10 w-64 bg-gray-200 animate-pulse rounded"></div>
                 <div className="flex items-center gap-2">
-                    <Skeleton className="h-10 w-32" />
-                    <Skeleton className="h-10 w-40" />
+                    <div className="h-10 w-32 bg-gray-200 animate-pulse rounded"></div>
+                    <div className="h-10 w-40 bg-gray-200 animate-pulse rounded"></div>
                 </div>
               </div>
-              <Skeleton className="h-12 w-full sm:w-96" />
+              <div className="h-12 w-full sm:w-96 bg-gray-200 animate-pulse rounded"></div>
               <div className="space-y-4 mt-4">
-                <Skeleton className="h-48 w-full" />
-                <Skeleton className="h-48 w-full" />
+                <div className="h-48 w-full bg-gray-200 animate-pulse rounded"></div>
+                <div className="h-48 w-full bg-gray-200 animate-pulse rounded"></div>
               </div>
           </div>
       );
@@ -455,13 +473,161 @@ export default function LoansPage() {
              <div className="flex flex-row items-center gap-2">
               <div className="relative w-full flex-grow">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
+                  <input
                       placeholder="Buscar por docente..."
-                      className="pl-9 w-full"
+                      className="pl-9 w-full h-10 px-3 py-2 bg-background text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 border border-input rounded-md"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                   />
               </div>
+              <Sheet>
+                <SheetTrigger asChild>
+                   <Button variant="outline" className="shrink-0 relative h-10 w-10 p-0 sm:w-auto sm:px-4 sm:py-2">
+                    <Filter className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Filtros</span>
+                    {activeFilterCount > 0 && (
+                      <Badge variant="secondary" className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center sm:relative sm:top-auto sm:right-auto sm:ml-2 sm:h-auto sm:w-auto sm:px-1.5 sm:py-0.5">
+                        {activeFilterCount}
+                      </Badge>
+                    )}
+                  </Button>
+                </SheetTrigger>
+                <SheetContent className="flex flex-col">
+                  <SheetHeader>
+                    <SheetTitle>Filtros de Préstamos</SheetTitle>
+                    <SheetDescription>
+                      Aplica filtros para encontrar préstamos específicos.
+                    </SheetDescription>
+                  </SheetHeader>
+                  <div className="flex-1 py-4 space-y-6">
+                    {/* Filtros para préstamos activos */}
+                    {activeTab === 'active' && (
+                      <div className="space-y-4">
+                        <div>
+                          <Label className="text-sm font-medium mb-3 block">Estado del Préstamo</Label>
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between rounded-lg border p-3">
+                              <Label htmlFor="overdue-filter" className="flex flex-col gap-1">
+                                <span>Solo vencidos</span>
+                                <span className="font-normal leading-snug text-muted-foreground text-xs">
+                                  Mostrar únicamente préstamos que han excedido su fecha de devolución.
+                                </span>
+                              </Label>
+                              <Switch
+                                id="overdue-filter"
+                                checked={showOnlyOverdue}
+                                onCheckedChange={setShowOnlyOverdue}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Filtros para historial */}
+                    {activeTab === 'historical' && (
+                      <div className="space-y-4">
+                        <div>
+                          <Label className="text-sm font-medium mb-3 block">Estado del Préstamo</Label>
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between rounded-lg border p-3">
+                              <Label htmlFor="returned-filter" className="flex flex-col gap-1">
+                                <span>Devueltos</span>
+                                <span className="font-normal leading-snug text-muted-foreground text-xs">
+                                  Mostrar préstamos que ya fueron devueltos.
+                                </span>
+                              </Label>
+                              <Switch
+                                id="returned-filter"
+                                checked={statusFilter === 'returned'}
+                                onCheckedChange={(checked) => setStatusFilter(checked ? 'returned' : 'all')}
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div>
+                          <Label className="text-sm font-medium mb-3 block">Tipo de Préstamo</Label>
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between rounded-lg border p-3">
+                              <Label htmlFor="aprendizaje-filter" className="flex flex-col gap-1">
+                                <span>Aprendizaje</span>
+                                <span className="font-normal leading-snug text-muted-foreground text-xs">
+                                  Préstamos para actividades académicas.
+                                </span>
+                              </Label>
+                              <Switch
+                                id="aprendizaje-filter"
+                                checked={loanTypeFilter === 'aprendizaje'}
+                                onCheckedChange={(checked) => setLoanTypeFilter(checked ? 'aprendizaje' : 'all')}
+                              />
+                            </div>
+                            <div className="flex items-center justify-between rounded-lg border p-3">
+                              <Label htmlFor="institucional-filter" className="flex flex-col gap-1">
+                                <span>Institucional</span>
+                                <span className="font-normal leading-snug text-muted-foreground text-xs">
+                                  Préstamos para uso institucional.
+                                </span>
+                              </Label>
+                              <Switch
+                                id="institucional-filter"
+                                checked={loanTypeFilter === 'institucional'}
+                                onCheckedChange={(checked) => setLoanTypeFilter(checked ? 'institucional' : 'all')}
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div>
+                          <Label className="text-sm font-medium mb-3 block">Rango de Fechas</Label>
+                          <DateRangePicker
+                            date={dateRange}
+                            onDateChange={setDateRange}
+                          />
+                        </div>
+
+                        <div>
+                          <Label className="text-sm font-medium mb-3 block">Reportes</Label>
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between rounded-lg border p-3">
+                              <Label htmlFor="damages-filter" className="flex flex-col gap-1">
+                                <span>Con daños reportados</span>
+                                <span className="font-normal leading-snug text-muted-foreground text-xs">
+                                  Incluir préstamos con reportes de daños.
+                                </span>
+                              </Label>
+                              <Switch
+                                id="damages-filter"
+                                checked={filterWithDamages}
+                                onCheckedChange={setFilterWithDamages}
+                              />
+                            </div>
+                            <div className="flex items-center justify-between rounded-lg border p-3">
+                              <Label htmlFor="suggestions-filter" className="flex flex-col gap-1">
+                                <span>Con sugerencias</span>
+                                <span className="font-normal leading-snug text-muted-foreground text-xs">
+                                  Incluir préstamos con sugerencias reportadas.
+                                </span>
+                              </Label>
+                              <Switch
+                                id="suggestions-filter"
+                                checked={filterWithSuggestions}
+                                onCheckedChange={setFilterWithSuggestions}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <SheetFooter>
+                    <Button variant="outline" className="w-full" onClick={clearFilters}>
+                      <X className="mr-2 h-4 w-4" />
+                      Limpiar Filtros
+                    </Button>
+                  </SheetFooter>
+                </SheetContent>
+              </Sheet>
             </div>
           </CardHeader>
         </Card>
