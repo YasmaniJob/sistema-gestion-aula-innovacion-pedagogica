@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -35,7 +34,6 @@ import { Separator } from '@/components/ui/separator';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import type { DateRange } from 'react-day-picker';
 import { Badge } from '@/components/ui/badge';
-import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { useData } from '@/context/data-provider-refactored';
@@ -48,7 +46,7 @@ export default function LoansPage() {
   usePageTitle('Gestión de Préstamos');
   const { loans, approveLoan, rejectLoan, isLoadingData } = useData();
   const [activeTab, setActiveTab] = useState('active');
-  
+
   const { toast } = useToast();
   const [processingLoanId, setProcessingLoanId] = useState<string | null>(null);
 
@@ -58,6 +56,12 @@ export default function LoansPage() {
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [filterWithDamages, setFilterWithDamages] = useState(false);
   const [filterWithSuggestions, setFilterWithSuggestions] = useState(false);
+
+  const [readNotes, setReadNotes] = useState<Set<string>>(new Set());
+
+  // Pagination states for historical loans
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
 
   const [isExportOpen, setIsExportOpen] = useState(false);
 
@@ -79,11 +83,10 @@ export default function LoansPage() {
     return { pendingLoans: pending, activeLoans: active, historicalLoans: historical };
   }, [loans]);
 
-  
   const handleViewIncidents = (loan: Loan, resource: Pick<Resource, 'id' | 'name' | 'brand'>) => {
     setSelectedIncident({ loan, resource });
   };
-  
+
   const clearFilters = () => {
     setSearchQuery('');
     setShowOnlyOverdue(false);
@@ -91,10 +94,14 @@ export default function LoansPage() {
     setFilterWithDamages(false);
     setFilterWithSuggestions(false);
   };
-  
+
   useEffect(() => {
     clearFilters();
   }, [activeTab]);
+
+  const handleNoteRead = (loanId: string) => {
+    setReadNotes(prev => new Set([...prev, loanId]));
+  };
 
   const handleLoanApproval = async (loanId: string) => {
     const loanToApprove = loans.find(loan => loan.id === loanId);
@@ -152,7 +159,7 @@ export default function LoansPage() {
         if (!loan.user) return false;
         const matchesSearch = loan.user.name.toLowerCase().includes(searchQuery.toLowerCase());
         if (!matchesSearch) return false;
-        
+
         if (showOnlyOverdue) {
             return loan.returnDate && isBefore(loan.returnDate, today);
         }
@@ -165,13 +172,13 @@ export default function LoansPage() {
         if (!loan.user) return false;
         const matchesSearch = loan.user.name.toLowerCase().includes(searchQuery.toLowerCase());
         if (!matchesSearch) return false;
-        
+
         if (dateRange?.from && loan.returnDate) {
             if (!isWithinInterval(loan.returnDate, { start: dateRange.from, end: dateRange.to || new Date() })) {
                 return false;
             }
         }
-        
+
         if (filterWithDamages) {
             const hasDamages = loan.damageReports && Object.values(loan.damageReports).some(r => r.commonProblems.length > 0 || r.otherNotes.trim() !== '');
             if (!hasDamages) return false;
@@ -185,22 +192,26 @@ export default function LoansPage() {
         return true;
     });
   }, [historicalLoans, searchQuery, dateRange, filterWithDamages, filterWithSuggestions]);
-  
+
+  // Pagination logic for historical loans
+  const totalPages = Math.ceil(filteredHistoricalLoans.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentHistoricalLoans = filteredHistoricalLoans.slice(startIndex, endIndex);
+
   const activeFilterCount = [
-    searchQuery, 
-    showOnlyOverdue, 
-    dateRange, 
-    filterWithDamages, 
+    searchQuery,
+    showOnlyOverdue,
+    dateRange,
+    filterWithDamages,
     filterWithSuggestions
   ].filter(Boolean).length;
 
   const handleExportExcel = async () => {
-    // Usar datos ya filtrados según el estado actual de filtros
     const loansToExport = activeTab === 'active'
       ? [...filteredPendingLoans, ...filteredActiveLoans]
       : filteredHistoricalLoans;
 
-    // Importación dinámica corregida para evitar problemas de bundling
     const XLSX = await import('xlsx');
 
     const dataToExport = loansToExport.map(loan => ({
@@ -223,24 +234,20 @@ export default function LoansPage() {
   };
 
   const handleExportPDF = async () => {
-    // Usar datos ya filtrados según el estado actual de filtros
     const loansToExport = activeTab === 'active'
       ? [...filteredPendingLoans, ...filteredActiveLoans]
       : filteredHistoricalLoans;
 
-    // Importaciones dinámicas corregidas para evitar problemas de bundling
     const jsPDF = (await import('jspdf')).default;
     await import('jspdf-autotable');
 
     const doc = new jsPDF();
 
-    // Colores profesionales (igual que en reservas)
-    const primaryColor: [number, number, number] = [41, 128, 185]; // Azul
-    const secondaryColor: [number, number, number] = [52, 152, 219]; // Azul claro
-    const accentColor: [number, number, number] = [46, 204, 113]; // Verde
-    const textColor: [number, number, number] = [44, 62, 80]; // Gris oscuro
+    const primaryColor: [number, number, number] = [41, 128, 185];
+    const secondaryColor: [number, number, number] = [52, 152, 219];
+    const accentColor: [number, number, number] = [46, 204, 113];
+    const textColor: [number, number, number] = [44, 62, 80];
 
-    // Encabezado profesional
     doc.setFillColor(...primaryColor);
     doc.rect(0, 0, 210, 35, 'F');
 
@@ -249,13 +256,11 @@ export default function LoansPage() {
     doc.setFont('helvetica', 'bold');
     doc.text('REPORTE DE PRÉSTAMOS', 14, 20);
 
-    // Subtítulo con información del filtro
     const tabText = activeTab === 'active' ? 'Activos y Pendientes' : 'Historial';
     doc.setFontSize(12);
     doc.setFont('helvetica', 'normal');
     doc.text(`Reporte: ${tabText}`, 14, 28);
 
-    // Fecha de generación
     doc.setFontSize(10);
     doc.text(`Generado el: ${new Date().toLocaleDateString('es-ES', {
       year: 'numeric',
@@ -265,7 +270,6 @@ export default function LoansPage() {
       minute: '2-digit'
     })}`, 14, 32);
 
-    // Estadísticas resumidas
     doc.setTextColor(...textColor);
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
@@ -284,7 +288,6 @@ export default function LoansPage() {
     doc.setFont('helvetica', 'normal');
     let yPos = 58;
 
-    // Estadísticas en dos columnas
     doc.text(`• Total de préstamos: ${stats.total}`, 14, yPos);
     doc.text(`• Préstamos activos: ${stats.activos}`, 110, yPos);
     yPos += 6;
@@ -294,8 +297,7 @@ export default function LoansPage() {
     doc.text(`• Propósito académico: ${stats.aprendizaje}`, 14, yPos);
     doc.text(`• Propósito institucional: ${stats.institucional}`, 110, yPos);
 
-    // Preparar datos de tabla detallada
-    const tableData = loansToExport.slice(0, 40).map(loan => { // Limitar a 40 para evitar PDF muy largo
+    const tableData = loansToExport.slice(0, 40).map(loan => {
       const estado = loan.status === 'active' ? 'Sin devolver' :
                     loan.status === 'pending' ? 'Pendiente' :
                     loan.status === 'returned' ? 'Devuelto' : 'Rechazado';
@@ -313,13 +315,11 @@ export default function LoansPage() {
       ];
     });
 
-    // Título de tabla
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
     doc.text('Detalle de Préstamos', 14, yPos + 15);
 
-    // Crear tabla con colores profesionales
-    // @ts-ignore - autoTable no está tipado correctamente
+    // @ts-ignore
     doc.autoTable({
       startY: yPos + 22,
       head: [['Usuario', 'Estado', 'Fecha Préstamo', 'Fecha Devolución', 'Propósito', 'Recursos']],
@@ -337,12 +337,12 @@ export default function LoansPage() {
         cellPadding: 2
       },
       columnStyles: {
-        0: { halign: 'left', cellWidth: 35 },   // Usuario
-        1: { halign: 'center', cellWidth: 20 }, // Estado
-        2: { halign: 'center', cellWidth: 25 }, // Fecha Préstamo
-        3: { halign: 'center', cellWidth: 25 }, // Fecha Devolución
-        4: { halign: 'center', cellWidth: 20 }, // Propósito
-        5: { halign: 'left', cellWidth: 45 }    // Recursos
+        0: { halign: 'left', cellWidth: 35 },
+        1: { halign: 'center', cellWidth: 20 },
+        2: { halign: 'center', cellWidth: 25 },
+        3: { halign: 'center', cellWidth: 25 },
+        4: { halign: 'center', cellWidth: 20 },
+        5: { halign: 'left', cellWidth: 45 }
       },
       alternateRowStyles: {
         fillColor: [248, 249, 250]
@@ -352,21 +352,20 @@ export default function LoansPage() {
         lineWidth: 0.1
       },
       didParseCell: function(data: any) {
-        // Colorear estados
-        if (data.column.index === 1) { // Columna Estado
+        if (data.column.index === 1) {
           const status = data.cell.text?.[0];
           if (status) {
             switch(status) {
               case 'Sin devolver':
-                data.cell.styles.textColor = [46, 125, 50]; // Verde oscuro
+                data.cell.styles.textColor = [46, 125, 50];
                 data.cell.styles.fontStyle = 'bold';
                 break;
               case 'Pendiente':
-                data.cell.styles.textColor = [255, 193, 7]; // Amarillo
+                data.cell.styles.textColor = [255, 193, 7];
                 data.cell.styles.fontStyle = 'bold';
                 break;
               case 'Devuelto':
-                data.cell.styles.textColor = [76, 175, 80]; // Verde
+                data.cell.styles.textColor = [76, 175, 80];
                 data.cell.styles.fontStyle = 'bold';
                 break;
             }
@@ -375,7 +374,6 @@ export default function LoansPage() {
       }
     });
 
-    // Pie de página
     const pageCount = doc.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
@@ -464,91 +462,6 @@ export default function LoansPage() {
                       onChange={(e) => setSearchQuery(e.target.value)}
                   />
               </div>
-              <Sheet>
-                  <SheetTrigger asChild>
-                      <Button variant="outline" className="shrink-0 relative h-10 w-10 p-0 sm:w-auto sm:px-4 sm:py-2">
-                          <Filter className="h-4 w-4 sm:mr-2" />
-                          <span className="hidden sm:inline">Filtros</span>
-                           {activeFilterCount > 0 && (
-                                <Badge variant="secondary" className={cn(
-                                    "absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center sm:relative sm:top-auto sm:right-auto sm:ml-2 sm:h-auto sm:w-auto sm:px-1.5 sm:py-0.5",
-                                )}>
-                                {activeFilterCount}
-                                </Badge>
-                          )}
-                      </Button>
-                  </SheetTrigger>
-                  <SheetContent className="flex flex-col" side="right">
-                      <SheetHeader>
-                          <SheetTitle>Filtros de Préstamos</SheetTitle>
-                          <SheetDescription>
-                              Aplica filtros para encontrar préstamos específicos.
-                          </SheetDescription>
-                      </SheetHeader>
-                      <div className="flex-1 py-4">
-                        <div className="space-y-4">
-                            <div className="relative">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    id="search-user"
-                                    placeholder="Buscar por docente..."
-                                    className="pl-9"
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                />
-                            </div>
-
-                            <Separator />
-
-                            {activeTab === 'active' && (
-                                <div className="flex items-center justify-between rounded-lg border p-3">
-                                    <Label htmlFor="overdue-filter">Mostrar solo vencidos</Label>
-                                    <Switch
-                                        id="overdue-filter"
-                                        checked={showOnlyOverdue}
-                                        onCheckedChange={setShowOnlyOverdue}
-                                    />
-                                </div>
-                            )}
-
-                            {activeTab === 'historical' && (
-                                <div className="space-y-4">
-                                    <div>
-                                        <Label>Filtrar por Fecha de Devolución</Label>
-                                        <DateRangePicker date={dateRange} onDateChange={setDateRange} />
-                                    </div>
-                                    <div className="flex items-center justify-between rounded-lg border p-3">
-                                        <Label htmlFor="damages-filter" className="flex items-center gap-2">
-                                            <ShieldAlert className="h-4 w-4 text-destructive" /> Con Daños
-                                        </Label>
-                                        <Switch
-                                            id="damages-filter"
-                                            checked={filterWithDamages}
-                                            onCheckedChange={setFilterWithDamages}
-                                        />
-                                    </div>
-                                    <div className="flex items-center justify-between rounded-lg border p-3">
-                                        <Label htmlFor="suggestions-filter" className="flex items-center gap-2">
-                                            <MessageSquarePlus className="h-4 w-4 text-amber-600" /> Con Sugerencias
-                                        </Label>
-                                        <Switch
-                                            id="suggestions-filter"
-                                            checked={filterWithSuggestions}
-                                            onCheckedChange={setFilterWithSuggestions}
-                                        />
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                      </div>
-                      <SheetFooter>
-                          <Button variant="outline" className="w-full" onClick={clearFilters}>
-                              <X className="mr-2 h-4 w-4" />
-                              Limpiar Filtros
-                          </Button>
-                      </SheetFooter>
-                  </SheetContent>
-              </Sheet>
             </div>
           </CardHeader>
         </Card>
@@ -592,14 +505,52 @@ export default function LoansPage() {
                 </Card>
             ) : (
                 <div className="space-y-4 mt-4">
-                    {filteredHistoricalLoans.map((loan) => (
+                    {currentHistoricalLoans.map((loan) => (
                         <LoanCard key={loan.id} loan={loan} onViewIncidents={handleViewIncidents}/>
                     ))}
+
+                    {/* Pagination Component */}
+                    {totalPages > 1 && (
+                        <div className="flex items-center justify-center mt-6">
+                            <div className="flex items-center space-x-2">
+                                <button
+                                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                    disabled={currentPage === 1}
+                                    className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    Anterior
+                                </button>
+
+                                {/* Page Numbers */}
+                                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                                    <button
+                                        key={page}
+                                        onClick={() => setCurrentPage(page)}
+                                        className={`px-3 py-2 text-sm font-medium rounded-md ${
+                                            currentPage === page
+                                                ? 'bg-blue-600 text-white'
+                                                : 'text-gray-500 bg-white border border-gray-300 hover:bg-gray-50'
+                                        }`}
+                                    >
+                                        {page}
+                                    </button>
+                                ))}
+
+                                <button
+                                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                    disabled={currentPage === totalPages}
+                                    className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    Siguiente
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
         </TabsContent>
       </Tabs>
-      
+
       <IncidentsReportDialog
         isOpen={!!selectedIncident}
         onOpenChange={(isOpen) => !isOpen && setSelectedIncident(null)}

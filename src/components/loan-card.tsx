@@ -1,12 +1,18 @@
 
 
 'use client';
-
 import type { Loan, Resource } from '@/domain/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+import { useState, useEffect, useMemo } from 'react';
+import Link from 'next/link';
+import { format, isBefore, startOfDay, differenceInDays } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { NoteButton } from '@/components/note-components';
 import {
   BookOpen,
   GraduationCap,
@@ -24,12 +30,6 @@ import {
   PackageX,
   Sparkles,
 } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { format, isBefore, startOfDay, differenceInDays } from 'date-fns';
-import { es } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
-import { useState, useEffect, useMemo } from 'react';
-import Link from 'next/link';
 
 type LoanCardProps = {
   loan: Loan;
@@ -324,31 +324,35 @@ export function LoanCard({ loan, isTeacherContext = false, onViewIncidents }: Lo
                   resource.category === 'Laptops' || resource.category === 'Tablets' ||
                   (resource.name && (resource.name.toLowerCase().includes('laptop') || resource.name.toLowerCase().includes('tablet')))
                 );
-                
                 elements.push(
-                  <Badge key={resource.id} variant="secondary" className="font-normal py-1 pr-3">
-                    <Camera className="h-4 w-4 mr-2" />
-                    {resource.name}
+                  <div key={resource.id} className="flex items-center gap-2">
+                    <Badge variant="secondary" className="font-normal py-1 pr-3">
+                      <Camera className="h-4 w-4 mr-2" />
+                      {resource.name}
+                    </Badge>
                     {(damages || suggestions || missing) && onViewIncidents && (
-                        <div className="flex items-center gap-1.5 ml-2 pl-2 border-l border-border">
-                            {damages && (
-                                <button onClick={() => onViewIncidents(loan, resource)} aria-label="Ver reporte de daños">
-                                  <ShieldAlert className="h-4 w-4 text-destructive" />
-                                </button>
-                            )}
-                            {suggestions && (
-                                 <button onClick={() => onViewIncidents(loan, resource)} aria-label="Ver reporte de sugerencias">
-                                  <MessageSquarePlus className="h-4 w-4 text-amber-600" />
-                                 </button>
-                            )}
-                            {missing && (
-                                 <button onClick={() => onViewIncidents(loan, resource)} aria-label="Ver recursos faltantes">
-                                  <PackageX className="h-4 w-4 text-orange-600" />
-                                 </button>
-                            )}
-                        </div>
+                      <div className="flex items-center gap-1">
+                        {damages && (
+                          <button onClick={() => onViewIncidents(loan, resource)} aria-label="Ver reporte de daños" className="p-1 hover:bg-destructive/10 rounded">
+                            <ShieldAlert className="h-4 w-4 text-destructive" />
+                          </button>
+                        )}
+                        {suggestions && (
+                          <button onClick={() => onViewIncidents(loan, resource)} aria-label="Ver reporte de sugerencias" className="p-1 hover:bg-amber-100 rounded">
+                            <MessageSquarePlus className="h-4 w-4 text-amber-600" />
+                          </button>
+                        )}
+                        {missing && (
+                          <button onClick={() => onViewIncidents(loan, resource)} aria-label="Ver recursos faltantes" className="p-1 hover:bg-orange-100 rounded">
+                            <PackageX className="h-4 w-4 text-orange-600" />
+                          </button>
+                        )}
+                      </div>
                     )}
-                  </Badge>
+                    {loan.notes && (
+                      <NoteButton notes={loan.notes} variant="icon" />
+                    )}
+                  </div>
                 );
                 
                 // Agregar badge separado para el cargador si existe
@@ -369,69 +373,79 @@ export function LoanCard({ loan, isTeacherContext = false, onViewIncidents }: Lo
                 const missing = hasMissingResources(accessory.id);
                 
                 elements.push(
-                  <Badge key={accessory.id} variant="secondary" className="font-normal py-1 pr-3">
-                    <Sparkles className="h-4 w-4 mr-2" />
-                    {accessory.name}
+                  <div key={accessory.id} className="flex items-center gap-2">
+                    <Badge variant="secondary" className="font-normal py-1 pr-3">
+                      <Sparkles className="h-4 w-4 mr-2" />
+                      {accessory.name}
+                    </Badge>
                     {(damages || suggestions || missing) && onViewIncidents && (
-                        <div className="flex items-center gap-1.5 ml-2 pl-2 border-l border-border">
-                            {damages && (
-                                <button onClick={() => onViewIncidents(loan, accessory)} aria-label="Ver reporte de daños">
-                                  <ShieldAlert className="h-4 w-4 text-destructive" />
-                                </button>
-                            )}
-                            {suggestions && (
-                                 <button onClick={() => onViewIncidents(loan, accessory)} aria-label="Ver reporte de sugerencias">
-                                  <MessageSquarePlus className="h-4 w-4 text-amber-600" />
-                                 </button>
-                            )}
-                            {missing && (
-                                 <button onClick={() => onViewIncidents(loan, accessory)} aria-label="Ver recursos faltantes">
-                                  <PackageX className="h-4 w-4 text-orange-600" />
-                                 </button>
-                            )}
-                        </div>
+                      <div className="flex items-center gap-1">
+                        {damages && (
+                          <button onClick={() => onViewIncidents(loan, accessory)} aria-label="Ver reporte de daños" className="p-1 hover:bg-destructive/10 rounded">
+                            <ShieldAlert className="h-4 w-4 text-destructive" />
+                          </button>
+                        )}
+                        {suggestions && (
+                          <button onClick={() => onViewIncidents(loan, accessory)} aria-label="Ver reporte de sugerencias" className="p-1 hover:bg-amber-100 rounded">
+                            <MessageSquarePlus className="h-4 w-4 text-amber-600" />
+                          </button>
+                        )}
+                        {missing && (
+                          <button onClick={() => onViewIncidents(loan, accessory)} aria-label="Ver recursos faltantes" className="p-1 hover:bg-orange-100 rounded">
+                            <PackageX className="h-4 w-4 text-orange-600" />
+                          </button>
+                        )}
+                      </div>
                     )}
-                  </Badge>
+                    {loan.notes && (
+                      <NoteButton notes={loan.notes} variant="icon" />
+                    )}
+                  </div>
                 );
               });
               
               // Mostrar cargadores independientes (que no están asociados a laptops/tablets)
               chargers.forEach((charger) => {
-                const hasMainResource = mainResources.some(resource => 
+                const hasMainResource = mainResources.some(resource =>
                   resource.category === 'Laptops' || resource.category === 'Tablets' ||
                   (resource.name && (resource.name.toLowerCase().includes('laptop') || resource.name.toLowerCase().includes('tablet')))
                 );
-                
+
                 // Solo mostrar cargadores independientes si no hay recursos principales que los incluyan
                 if (!hasMainResource) {
                   const damages = hasDamageReports(charger.id);
                   const suggestions = hasSuggestionReports(charger.id);
                   const missing = hasMissingResources(charger.id);
-                  
+
                   elements.push(
-                    <Badge key={charger.id} variant="secondary" className="font-normal py-1 pr-3">
-                      <Zap className="h-4 w-4 mr-2" />
-                      {charger.name}
-                      {(damages || suggestions || missing) && onViewIncidents && (
-                          <div className="flex items-center gap-1.5 ml-2 pl-2 border-l border-border">
-                              {damages && (
-                                  <button onClick={() => onViewIncidents(loan, charger)} aria-label="Ver reporte de daños">
-                                    <ShieldAlert className="h-4 w-4 text-destructive" />
-                                  </button>
-                              )}
-                              {suggestions && (
-                                   <button onClick={() => onViewIncidents(loan, charger)} aria-label="Ver reporte de sugerencias">
-                                    <MessageSquarePlus className="h-4 w-4 text-amber-600" />
-                                   </button>
-                              )}
-                              {missing && (
-                                   <button onClick={() => onViewIncidents(loan, charger)} aria-label="Ver recursos faltantes">
-                                    <PackageX className="h-4 w-4 text-orange-600" />
-                                   </button>
-                              )}
-                          </div>
+                    <div key={charger.id} className="flex items-center gap-2">
+                      <Badge variant="secondary" className="font-normal py-1 pr-3">
+                        <Zap className="h-4 w-4 mr-2" />
+                        {charger.name}
+                      </Badge>
+                      {(damages || suggestions || missing || loan.notes) && onViewIncidents && (
+                        <div className="flex items-center gap-1">
+                          {damages && (
+                            <button onClick={() => onViewIncidents(loan, charger)} aria-label="Ver reporte de daños" className="p-1 hover:bg-destructive/10 rounded">
+                              <ShieldAlert className="h-4 w-4 text-destructive" />
+                            </button>
+                          )}
+                          {suggestions && (
+                            <button onClick={() => onViewIncidents(loan, charger)} aria-label="Ver reporte de sugerencias" className="p-1 hover:bg-amber-100 rounded">
+                              <MessageSquarePlus className="h-4 w-4 text-amber-600" />
+                            </button>
+                          )}
+                          {missing && (
+                            <button onClick={() => onViewIncidents(loan, charger)} aria-label="Ver recursos faltantes" className="p-1 hover:bg-orange-100 rounded">
+                              <PackageX className="h-4 w-4 text-orange-600" />
+                            </button>
+                          )}
+                          {loan.notes && (
+                            <NoteButton notes={loan.notes} variant="icon" />
+                          )}
+                        </div>
                       )}
-                    </Badge>
+                    </div>
                   );
                 }
               });
