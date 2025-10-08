@@ -154,7 +154,7 @@ export function ReservationCalendar({
     reservations: initialReservations = [],
     selectedSlots = [],
     onSlotToggle = () => {},
-    onUpdateReservationStatus = () => {},
+    onUpdateReservationStatus = async (_id: string, _status: ReservationStatus): Promise<void> => {},
     currentUserId,
     currentDate: externalCurrentDate,
     onDateChange: externalOnDateChange,
@@ -189,8 +189,14 @@ export function ReservationCalendar({
 
   // Optimize selectedDay update to prevent unnecessary re-renders
   useEffect(() => {
+    // Only sync selectedDay with currentDate when it's a programmatic change
+    // (like changing weeks or clicking "Today"), not when user manually selects a day
     if (!isSameDay(selectedDay, currentDate)) {
-      setSelectedDay(currentDate);
+      // Check if this is a week change (more than 1 day difference)
+      const daysDiff = Math.abs(currentDate.getTime() - selectedDay.getTime()) / (1000 * 60 * 60 * 24);
+      if (daysDiff > 1) {
+        setSelectedDay(currentDate);
+      }
     }
   }, [currentDate, selectedDay]);
 
@@ -263,10 +269,10 @@ export function ReservationCalendar({
 
   const handleUpdateStatus = useCallback(async (reservationId: string, status: ReservationStatus) => {
     if (!onUpdateReservationStatus) return;
-    
+
     setIsLoading(true);
     setError(null);
-    
+
     try {
       await onUpdateReservationStatus(reservationId, status);
       reservationModal.closeModal();
@@ -623,7 +629,8 @@ function ReservationDialog({ reservation, isOpen, onUpdateStatus, onOpenChange, 
             const statusMessages = {
                 'Realizada': 'La reserva ha sido marcada como realizada',
                 'No asistió': 'La reserva ha sido marcada como no asistió',
-                'Cancelada': 'La reserva ha sido cancelada'
+                'Cancelada': 'La reserva ha sido cancelada',
+                'Confirmada': 'La reserva ha sido confirmada'
             };
             
             toast({
