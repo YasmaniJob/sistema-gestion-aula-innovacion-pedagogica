@@ -166,6 +166,8 @@ export function ReservationCalendar({
   const currentDate = externalCurrentDate ?? internalCurrentDate;
   const onDateChange = externalOnDateChange ?? setInternalCurrentDate;
 
+  // Estado separado para la semana mostrada vs día seleccionado
+  const [currentWeekDate, setCurrentWeekDate] = useState(currentDate);
   const [selectedDay, setSelectedDay] = useState(currentDate);
   const [isCalendarOpen, setCalendarOpen] = useState(false);
   const isMobile = useIsMobile();
@@ -187,42 +189,53 @@ export function ReservationCalendar({
   // Use reservations directly from props instead of local state
   const reservations = initialReservations;
 
-  // Optimize selectedDay update to prevent unnecessary re-renders
+  // Sync currentWeekDate with external currentDate changes (like from parent component)
   useEffect(() => {
-    // Only sync selectedDay with currentDate when it's a programmatic change
-    // (like changing weeks or clicking "Today"), not when user manually selects a day
-    if (!isSameDay(selectedDay, currentDate)) {
-      // Check if this is a week change (more than 1 day difference)
-      const daysDiff = Math.abs(currentDate.getTime() - selectedDay.getTime()) / (1000 * 60 * 60 * 24);
-      if (daysDiff > 1) {
-        setSelectedDay(currentDate);
+    if (externalCurrentDate && !isSameDay(currentWeekDate, externalCurrentDate)) {
+      setCurrentWeekDate(externalCurrentDate);
+      // When week changes externally, try to keep selectedDay within the new week
+      const newWeekStart = startOfWeek(externalCurrentDate, { weekStartsOn: 1 });
+      const newWeekDays = Array.from({ length: 5 }, (_, i) => addDays(newWeekStart, i));
+
+      // If selectedDay is not in the new week, select the first day of the new week
+      const isSelectedDayInNewWeek = newWeekDays.some(day => isSameDay(day, selectedDay));
+      if (!isSelectedDayInNewWeek) {
+        setSelectedDay(newWeekDays[0]);
       }
     }
-  }, [currentDate, selectedDay]);
+  }, [externalCurrentDate, currentWeekDate, selectedDay]);
 
-
-  const weekStart = useMemo(() => startOfWeek(currentDate, { weekStartsOn: 1 }), [currentDate]);
-  const weekEnd = useMemo(() => endOfWeek(currentDate, { weekStartsOn: 1 }), [currentDate]);
+  // Calculate week data based on currentWeekDate
+  const weekStart = useMemo(() => startOfWeek(currentWeekDate, { weekStartsOn: 1 }), [currentWeekDate]);
+  const weekEnd = useMemo(() => endOfWeek(currentWeekDate, { weekStartsOn: 1 }), [currentWeekDate]);
   const weekDays = useMemo(() => {
-    const start = startOfWeek(currentDate, { weekStartsOn: 1 }); // Start from Monday for the 5-day view
+    const start = startOfWeek(currentWeekDate, { weekStartsOn: 1 });
     return Array.from({ length: 5 }, (_, i) => addDays(start, i));
-  }, [currentDate]);
+  }, [currentWeekDate]);
 
-  const handlePreviousWeek = () => onDateChange(subWeeks(currentDate, 1));
-  const handleNextWeek = () => onDateChange(addWeeks(currentDate, 1));
+  const handlePreviousWeek = () => setCurrentWeekDate(prev => subWeeks(prev, 1));
+  const handleNextWeek = () => setCurrentWeekDate(prev => addWeeks(prev, 1));
   const handleToday = () => {
     const today = new Date();
-    onDateChange(today);
+    setCurrentWeekDate(today);
     setSelectedDay(today);
   };
-  
+
   const handleDateSelect = (date: Date | undefined) => {
     if (date) {
-        onDateChange(date);
-        setSelectedDay(date);
-        setCalendarOpen(false);
+      setCurrentWeekDate(date);
+      setSelectedDay(date);
+      setCalendarOpen(false);
     }
   }
+
+  // Ensure selectedDay is always within the current week
+  useEffect(() => {
+    const isSelectedDayInCurrentWeek = weekDays.some(day => isSameDay(day, selectedDay));
+    if (!isSelectedDayInCurrentWeek && weekDays.length > 0) {
+      setSelectedDay(weekDays[0]);
+    }
+  }, [weekDays, selectedDay]);
 
   const getReservationForSlot = (date: Date, time: string): Reservation | undefined => {
     return reservations.find(res => {
@@ -248,7 +261,7 @@ export function ReservationCalendar({
   const handleSlotClick = useCallback((date: Date, time: string) => {
     const reservation = getReservationForSlot(date, time);
     const slotId = `${date.toISOString().split('T')[0]}T${time}`;
-    
+
     if (reservation) {
         if (mode === 'view') {
             reservationModal.openWithData(reservation);
@@ -261,7 +274,7 @@ export function ReservationCalendar({
         router.push(`${backUrl}/new?slot=${encodeURIComponent(slotId)}`);
         return;
     }
-    
+
     if (mode === 'new') {
         onSlotToggle(slotId);
     }
@@ -359,7 +372,7 @@ export function ReservationCalendar({
                               const reservation = getReservationForSlot(day, slot);
                               const slotId = `${day.toISOString().split('T')[0]}T${slot}`;
                               const isSelected = selectedSlots.includes(slotId);
-                              
+
                               return (
                                   <TableCell
                                       key={day.toISOString()}
@@ -384,7 +397,7 @@ export function ReservationCalendar({
                                                 </div>
                                             </div>
                                           )}
-                                          
+
                                           {!isSelected && mode === 'view' && (
                                              <div className="absolute inset-0 items-center justify-center text-primary/50 font-medium bg-transparent transition-opacity duration-200 opacity-0 group-hover:opacity-100 hidden sm:flex">
                                                 <div className="flex items-center space-x-1">
@@ -393,7 +406,7 @@ export function ReservationCalendar({
                                                 </div>
                                             </div>
                                           )}
-                                          
+
                                           {!isSelected && mode === 'new' && (
                                              <div className="absolute inset-0 items-center justify-center text-primary/40 font-medium bg-transparent transition-opacity duration-200 opacity-0 group-hover:opacity-100 hidden sm:flex">
                                                 <span className="text-sm">Disponible</span>
@@ -578,7 +591,7 @@ export function ReservationCalendar({
                 <PopoverContent className="w-auto p-0">
                     <Calendar
                         mode="single"
-                        selected={currentDate}
+                        selected={currentWeekDate}
                         onSelect={handleDateSelect}
                         initialFocus
                         locale={es}
