@@ -409,88 +409,140 @@ export function ReservationCalendar({
   function MobileView() {
     return (
       <div className="mt-4 space-y-4">
-        <div className="grid grid-cols-5 gap-3">
-            {weekDays.map(day => {
-                const isSelectedDay = isSameDay(day, selectedDay);
-                const isDayToday = isToday(day);
-                
-                return (
-                    <Button 
-                        key={day.toISOString()}
-                        variant={isSelectedDay ? "default" : "outline"}
-                        className={cn(
-                            "flex flex-col h-auto p-2 transition-all duration-200",
-                            isSelectedDay && "bg-primary text-primary-foreground",
-                            !isSelectedDay && "hover:bg-primary/5",
-                            isDayToday && !isSelectedDay && "border-primary/30 bg-primary/3"
-                        )}
-                        onClick={() => setSelectedDay(day)}
-                    >
-                        <span className={cn(
-                            "text-xs capitalize",
-                            isDayToday && !isSelectedDay && "text-primary font-medium"
-                        )}>
-                            {format(day, 'eee', {locale: es})}
-                        </span>
-                        <span className={cn(
-                            "font-bold text-lg",
-                            isDayToday && !isSelectedDay && "text-primary"
-                        )}>
-                            {format(day, 'dd')}
-                        </span>
-                    </Button>
-                );
-            })}
+        {/* Navegador de semanas integrado en móvil */}
+        <div className="flex items-center justify-between gap-2 px-1">
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="sm" onClick={handlePreviousWeek} className="h-8 w-8 p-0">
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <div className="flex-1 text-center font-semibold text-primary text-sm p-2 rounded-md bg-primary/5">
+              {format(weekStart, 'd')} - {format(weekEnd, "d MMM", { locale: es })}
+            </div>
+            <Button variant="ghost" size="sm" onClick={handleNextWeek} className="h-8 w-8 p-0">
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className='flex items-center gap-1'>
+            <Popover open={isCalendarOpen} onOpenChange={setCalendarOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 px-2">
+                  <CalendarDays className="h-3 w-3 mr-1" />
+                  <span className="text-xs">Fecha</span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <Calendar
+                  mode="single"
+                  selected={currentDate}
+                  onSelect={handleDateSelect}
+                  initialFocus
+                  locale={es}
+                />
+              </PopoverContent>
+            </Popover>
+            <Button variant="outline" size="sm" onClick={handleToday} className="h-8 px-2">
+              <span className="text-xs">Hoy</span>
+            </Button>
+          </div>
         </div>
-        <div className="border rounded-lg p-2 space-y-2">
-            {timeSlots.map(slot => {
-                const reservation = getReservationForSlot(selectedDay, slot);
-                const config = reservation ? statusConfig[reservation.status] : null;
-                const slotId = `${selectedDay.toISOString().split('T')[0]}T${slot}`;
-                const isSelected = selectedSlots.includes(slotId);
 
-                return(
-                    <div 
-                        key={slot}
-                        className={cn(
-                            "flex items-center justify-between p-3 rounded-lg border transition-all duration-200 relative group",
-                             reservation && config?.bgClass && `${config.bgClass} ${config.borderClass}`,
-                             !reservation && !isSelected && 'cursor-pointer hover:bg-primary/5 hover:border-primary/20 border-gray-200',
-                             !reservation && isSelected && 'bg-primary/8 border-primary/30',
-                             mode === 'view' && reservation && 'cursor-pointer'
-                        )}
-                        onClick={() => handleSlotClick(selectedDay, slot)}
-                    >
-                       <div className="flex flex-col gap-1 items-start">
-                         <span className="font-semibold text-sm">{slot}</span>
-                         {reservation && (
-                            <p className={cn("text-xs font-medium flex items-center gap-1", config?.textClass)}>
-                              <User className="h-3 w-3" />
-                              {reservation.user?.name || 'Usuario Desconocido'}
-                            </p>
-                         )}
-                       </div>
-                       
-                       <div>
-                         {reservation && config ? (
-                            <Badge className={cn("font-medium", config.bgClass, config.textClass, `border ${config.borderClass}`)}>
-                                <config.icon className="h-4 w-4 mr-1" />
-                                {reservation.status}
-                            </Badge>
-                         ) : (
-                            isSelected ? (
-                              <Badge variant="default">
-                                  <CircleCheck className="h-4 w-4 mr-1"/>
-                                  Seleccionado
-                              </Badge>
-                            ) : (
-                              <span className='text-sm text-muted-foreground'>Disponible</span>
-                            )
-                         )}
-                       </div>
+        {/* Selector de días de la semana */}
+        <div className="grid grid-cols-5 gap-2">
+          {weekDays.map(day => {
+            const isSelectedDay = isSameDay(day, selectedDay);
+            const isDayToday = isToday(day);
+
+            return (
+              <Button
+                key={day.toISOString()}
+                variant={isSelectedDay ? "default" : "outline"}
+                size="sm"
+                className={cn(
+                  "flex flex-col h-auto p-3 transition-all duration-200",
+                  isSelectedDay && "bg-primary text-primary-foreground shadow-md",
+                  !isSelectedDay && "hover:bg-primary/5 border-primary/20",
+                  isDayToday && !isSelectedDay && "border-primary/40 bg-primary/5"
+                )}
+                onClick={() => setSelectedDay(day)}
+              >
+                <span className={cn(
+                  "text-xs capitalize mb-1",
+                  isDayToday && !isSelectedDay && "text-primary font-medium"
+                )}>
+                  {format(day, 'eee', {locale: es})}
+                </span>
+                <span className={cn(
+                  "font-bold text-lg",
+                  isDayToday && !isSelectedDay && "text-primary"
+                )}>
+                  {format(day, 'dd')}
+                </span>
+              </Button>
+            );
+          })}
+        </div>
+
+        {/* Lista de horarios disponibles */}
+        <div className="border rounded-lg p-3 space-y-2 bg-gray-50/50">
+          <div className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+            <Clock className="h-4 w-4" />
+            Horarios disponibles - {format(selectedDay, 'EEEE, dd/MM', { locale: es })}
+          </div>
+          {timeSlots.map(slot => {
+            const reservation = getReservationForSlot(selectedDay, slot);
+            const config = reservation ? statusConfig[reservation.status] : null;
+            const slotId = `${selectedDay.toISOString().split('T')[0]}T${slot}`;
+            const isSelected = selectedSlots.includes(slotId);
+
+            return(
+              <div
+                key={slot}
+                className={cn(
+                  "flex items-center justify-between p-3 rounded-lg border transition-all duration-200 relative group",
+                  reservation && config?.bgClass && `${config.bgClass} ${config.borderClass}`,
+                  !reservation && !isSelected && 'cursor-pointer hover:bg-primary/5 hover:border-primary/20 border-gray-200 bg-white',
+                  !reservation && isSelected && 'bg-primary/8 border-primary/30',
+                  mode === 'view' && reservation && 'cursor-pointer'
+                )}
+                onClick={() => handleSlotClick(selectedDay, slot)}
+              >
+                <div className="flex flex-col gap-1 items-start">
+                  <span className="font-semibold text-sm">{slot}</span>
+                  {reservation && (
+                    <div className="flex flex-col gap-0.5">
+                      <p className={cn("text-xs font-medium flex items-center gap-1", config?.textClass)}>
+                        <User className="h-3 w-3" />
+                        {reservation.user?.name || 'Usuario Desconocido'}
+                      </p>
+                      {reservation.purposeDetails?.activityName && (
+                        <p className={cn("text-xs opacity-75 truncate max-w-32", config?.textClass)}>
+                          {getActivityName(reservation.purposeDetails.activityName, pedagogicalHours)}
+                        </p>
+                      )}
                     </div>
-                )
-            })}
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {reservation && config ? (
+                    <Badge className={cn("font-medium text-xs", config.bgClass, config.textClass, `border ${config.borderClass}`)}>
+                      <config.icon className="h-3 w-3 mr-1" />
+                      {reservation.status}
+                    </Badge>
+                  ) : (
+                    isSelected ? (
+                      <Badge variant="default" className="text-xs">
+                        <CircleCheck className="h-3 w-3 mr-1"/>
+                        Seleccionado
+                      </Badge>
+                    ) : (
+                      <span className='text-xs text-muted-foreground'>Disponible</span>
+                    )
+                  )}
+                </div>
+              </div>
+            )
+          })}
         </div>
       </div>
     );
@@ -535,9 +587,8 @@ export function ReservationCalendar({
 
   return (
     <>
-        <WeekNavigator />
         {isMobile ? <MobileView /> : <DesktopView />}
-        <ReservationDialog 
+        <ReservationDialog
             reservation={reservationModal.data}
             isOpen={reservationModal.isOpen}
             onOpenChange={reservationModal.closeModal}
@@ -552,9 +603,9 @@ export function ReservationCalendar({
 type ReservationDialogProps = {
     reservation: Reservation | null;
     isOpen: boolean;
-    onUpdateStatus?: (id: string, status: ReservationStatus) => Promise<void>;
     onOpenChange: () => void;
-    currentUserId?: string | null; 
+    onUpdateStatus?: (id: string, status: ReservationStatus) => Promise<void>;
+    currentUserId?: string | null;
 };
 
 function ReservationDialog({ reservation, isOpen, onUpdateStatus, onOpenChange, currentUserId }: ReservationDialogProps) {
