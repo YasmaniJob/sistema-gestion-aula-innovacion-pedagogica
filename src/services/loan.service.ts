@@ -45,6 +45,28 @@ export async function getLoans(): Promise<any[]> {
     return processedLoans;
 }
 
+/**
+ * Approves a pending loan by updating its status to 'active'.
+ * @param loanId - The ID of the loan to approve.
+ * @returns The updated loan and any affected resources.
+ */
+export async function approveLoan(
+  loanId: string
+): Promise<{ updatedLoan: Loan, updatedResources?: Resource[] } | null> {
+  return updateLoanStatus(loanId, 'active');
+}
+
+/**
+ * Rejects a pending loan by updating its status to 'rejected'.
+ * @param loanId - The ID of the loan to reject.
+ * @returns The updated loan.
+ */
+export async function rejectLoan(
+  loanId: string
+): Promise<{ updatedLoan: Loan } | null> {
+  const result = await updateLoanStatus(loanId, 'rejected');
+  return result ? { updatedLoan: result.updatedLoan } : null;
+}
 
 /**
  * Creates a new loan and adds it to the database.
@@ -73,10 +95,10 @@ export async function addLoan(
             purpose: data.purpose,
             purpose_details: data.purposeDetails,
             resources: data.resources,
+            notes: data.notes || null, // Incluir notas del préstamo
             status: initialStatus,
             loan_date: getCurrentDate().toISOString(), // Set loan date on creation
             return_date: getCurrentDate().toISOString(), // Set return date as today for direct loans
-            notes: data.notes || null,
         }])
         .select(`
             *,

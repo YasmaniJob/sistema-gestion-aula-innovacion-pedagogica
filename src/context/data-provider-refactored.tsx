@@ -12,7 +12,7 @@ import {
     addMultipleUsers as addMultipleUsersSvc,
     registerUser as registerUserSvc
 } from '@/services/client/user.client';
-import * as loanService from '@/services/client/loan.client';
+import * as loanService from '@/services/loan.service';
 import * as resourceService from '@/services/client/resource.client';
 import * as reservationService from '@/services/client/reservation.client';
 import * as meetingService from '@/services/client/meeting.client';
@@ -114,7 +114,6 @@ interface DataContextType {
   addAreas: (names: string[]) => Promise<void>;
   updateArea: (areaId: string, newName: string) => Promise<void>;
   deleteArea: (areaId: string) => Promise<void>;
-  
   addGrade: (name: string) => Promise<Grade | null>;
   deleteGrade: (gradeId: string) => Promise<void>;
   addSection: (gradeId: string, name: string) => Promise<void>;
@@ -122,6 +121,8 @@ interface DataContextType {
 
   addPedagogicalHour: (name: string) => Promise<void>;
   deletePedagogicalHour: (hourId: string) => Promise<void>;
+  diagnoseInconsistencies: () => Promise<any>;
+  fixInconsistencies: () => Promise<any>;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -998,17 +999,15 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const deletePedagogicalHour = useCallback(async (hourId: string) => {
-    const success = await pedagogicalHourService.deletePedagogicalHour(hourId);
-    if (success) {
-      setPedagogicalHours(prev => prev.filter(h => h.id !== hourId));
-    }
+    await pedagogicalHourService.deletePedagogicalHour(hourId);
+    setPedagogicalHours(prev => prev.filter(h => h.id !== hourId));
   }, []);
 
   // Función para refrescar todos los datos
   const refreshAllData = useCallback(async () => {
     hasLoadedDataRef.current = false;
     setIsLoadingData(true);
-    
+
     try {
       console.log('Refreshing all data...');
       // Crear timeout para evitar carga infinita
@@ -1126,6 +1125,36 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       setIsLoadingData(false);
     }
   }, []);
+
+  const diagnoseInconsistencies = useCallback(async () => {
+    try {
+      // Importar dinámicamente para evitar problemas de tipos
+      const { diagnoseInconsistencies: diagnoseFn } = await import('@/services/loan.service');
+      const inconsistencies = await diagnoseFn();
+      return inconsistencies;
+    } catch (error) {
+      console.error('Error diagnosing inconsistencies:', error);
+      throw error;
+    }
+  }, []);
+
+  const fixInconsistencies = useCallback(async () => {
+    try {
+      // Importar dinámicamente para evitar problemas de tipos
+      const { fixInconsistencies: fixFn } = await import('@/services/loan.service');
+      const result = await fixFn();
+
+      // Si se corrigieron recursos, refrescar datos
+      if (result.totalFixed > 0) {
+        await refreshAllData();
+      }
+
+      return result;
+    } catch (error) {
+      console.error('Error fixing inconsistencies:', error);
+      throw error;
+    }
+  }, [refreshAllData]);
 
   // Valor del contexto memoizado con dependencias optimizadas
   const value: DataContextType = useMemo(() => ({

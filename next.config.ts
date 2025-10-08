@@ -17,14 +17,6 @@ const nextConfig: NextConfig = {
   // Optimización de bundle
   experimental: {
     optimizePackageImports: ['@radix-ui/react-icons', 'lucide-react'],
-    turbo: {
-      rules: {
-        '*.svg': {
-          loaders: ['@svgr/webpack'],
-          as: '*.js',
-        },
-      },
-    },
   },
   
   // Compresión y optimización
