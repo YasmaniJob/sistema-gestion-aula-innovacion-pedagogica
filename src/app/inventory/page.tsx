@@ -22,15 +22,18 @@ import { CategoryCard } from '@/components/category-card';
 import { usePageTitle } from '@/hooks/use-page-title';
 
 export default function InventoryPage() {
-  useAuthorization({ requiredRole: 'Admin' });
+  useAuthorization({ requiredRole: 'Docente' });
   usePageTitle('Inventario de Recursos');
-  const { categories, addCategories, resources, deleteCategory, refreshResources } = useData();
+  const { categories, addCategories, deleteCategory, resources, refreshResources } = useData();
   const [isCategoryDialogOpen, setCategoryDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
+  const { currentUser } = useData();
+
+  const isAdmin = currentUser?.role === 'Admin';
 
   const handleRefreshResources = async () => {
     setIsRefreshing(true);
@@ -110,24 +113,27 @@ export default function InventoryPage() {
   }, [categories, searchQuery]);
   
 
-  return (
     <>
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <h1 className="text-3xl font-bold flex-grow hidden sm:block">Inventario de Recursos</h1>
         <div className="hidden sm:flex items-center gap-2">
-          <Button 
-            onClick={handleRefreshResources}
-            variant="outline"
-            disabled={isRefreshing}
-          >
-            <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-            {isRefreshing ? 'Actualizando...' : 'Refrescar'}
-          </Button>
-          <Button onClick={() => setCategoryDialogOpen(true)}>
-            <PlusCircle className="mr-2" />
-            Añadir Categoría
-          </Button>
+          {isAdmin && (
+            <>
+              <Button
+                onClick={handleRefreshResources}
+                variant="outline"
+                disabled={isRefreshing}
+              >
+                <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                {isRefreshing ? 'Actualizando...' : 'Refrescar'}
+              </Button>
+              <Button onClick={() => setCategoryDialogOpen(true)}>
+                <PlusCircle className="mr-2" />
+                Añadir Categoría
+              </Button>
+            </>
+          )}
         </div>
       </div>
       
@@ -151,12 +157,12 @@ export default function InventoryPage() {
              const categoryResources = resources.filter(r => r.category === category.name);
              const availableResources = categoryResources.filter(r => r.status === 'disponible').length;
              return (
-               <CategoryCard 
+               <CategoryCard
                   key={category.name}
                   category={category}
                   resourceCount={categoryResources.length}
                   availableResources={availableResources}
-                  onDelete={(e) => handleDeleteClick(e, category)}
+                  onDelete={undefined}
                />
              )
            })}

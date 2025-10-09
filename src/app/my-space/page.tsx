@@ -36,7 +36,7 @@ import { usePageTitle } from '@/hooks/use-page-title';
 
 
 export default function MySpacePage() {
-    useAuthorization('Docente');
+    useAuthorization({ requiredRole: 'Docente' });
     usePageTitle('Mi Espacio');
     const { currentUser, loans, reservations } = useData();
     const [currentDate, setCurrentDate] = useState('');
