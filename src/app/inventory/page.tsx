@@ -111,108 +111,107 @@ export default function InventoryPage() {
       category.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [categories, searchQuery]);
-  
 
+  return (
     <>
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <h1 className="text-3xl font-bold flex-grow hidden sm:block">Inventario de Recursos</h1>
-        <div className="hidden sm:flex items-center gap-2">
-          {isAdmin && (
-            <>
-              <Button
-                onClick={handleRefreshResources}
-                variant="outline"
-                disabled={isRefreshing}
-              >
-                <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-                {isRefreshing ? 'Actualizando...' : 'Refrescar'}
-              </Button>
-              <Button onClick={() => setCategoryDialogOpen(true)}>
-                <PlusCircle className="mr-2" />
-                Añadir Categoría
-              </Button>
-            </>
-          )}
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <h1 className="text-3xl font-bold flex-grow hidden sm:block">Inventario de Recursos</h1>
+          <div className="hidden sm:flex items-center gap-2">
+            {isAdmin && (
+              <>
+                <Button
+                  onClick={handleRefreshResources}
+                  variant="outline"
+                  disabled={isRefreshing}
+                >
+                  <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  {isRefreshing ? 'Actualizando...' : 'Refrescar'}
+                </Button>
+                <Button onClick={() => setCategoryDialogOpen(true)}>
+                  <PlusCircle className="mr-2" />
+                  Añadir Categoría
+                </Button>
+              </>
+            )}
+          </div>
         </div>
-      </div>
-      
-      <Card>
-        <CardContent className="pt-6">
-          <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar categoría..."
-                className="pl-9"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="relative w-full">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar categoría..."
+                  className="pl-9"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+          </CardContent>
+        </Card>
+
+        {filteredCategories.length > 0 ? (
+           <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-3">
+             {filteredCategories.map((category) => {
+               const categoryResources = resources.filter(r => r.category === category.name);
+               const availableResources = categoryResources.filter(r => r.status === 'disponible').length;
+               return (
+                 <CategoryCard
+                    key={category.name}
+                    category={category}
+                    resourceCount={categoryResources.length}
+                    availableResources={availableResources}
+                    onDelete={undefined}
+                 />
+               )
+             })}
+           </div>
+        ) : (
+           <div className="col-span-full h-48 flex items-center justify-center border-2 border-dashed rounded-lg">
+              <div className='text-center'>
+                  <p className="text-muted-foreground">No se encontraron categorías con el nombre "{searchQuery}".</p>
+                  <Button variant="link" onClick={() => setSearchQuery('')}>Limpiar búsqueda</Button>
+              </div>
+          </div>
+        )}
+
+         <Dialog open={isCategoryDialogOpen} onOpenChange={setCategoryDialogOpen}>
+            <DialogContent>
+              <DialogHeader>
+                  <DialogTitle>Añadir Nuevas Categorías</DialogTitle>
+                  <DialogDescription>
+                      Selecciona uno o más tipos de categorías de la lista, o añade una personalizada. Las categorías que ya existen serán ignoradas.
+                  </DialogDescription>
+              </DialogHeader>
+              <CategoryForm
+                  onSubmit={handleAddCategories}
+                  onCancel={() => setCategoryDialogOpen(false)}
+                  existingCategories={categories}
               />
-            </div>
-        </CardContent>
-      </Card>
-      
-      {filteredCategories.length > 0 ? (
-         <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-3">
-           {filteredCategories.map((category) => {
-             const categoryResources = resources.filter(r => r.category === category.name);
-             const availableResources = categoryResources.filter(r => r.status === 'disponible').length;
-             return (
-               <CategoryCard
-                  key={category.name}
-                  category={category}
-                  resourceCount={categoryResources.length}
-                  availableResources={availableResources}
-                  onDelete={undefined}
-               />
-             )
-           })}
-         </div>
-      ) : (
-         <div className="col-span-full h-48 flex items-center justify-center border-2 border-dashed rounded-lg">
-            <div className='text-center'>
-                <p className="text-muted-foreground">No se encontraron categorías con el nombre "{searchQuery}".</p>
-                <Button variant="link" onClick={() => setSearchQuery('')}>Limpiar búsqueda</Button>
-            </div>
-        </div>
-      )}
+            </DialogContent>
+         </Dialog>
 
-
-       <Dialog open={isCategoryDialogOpen} onOpenChange={setCategoryDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-                <DialogTitle>Añadir Nuevas Categorías</DialogTitle>
-                <DialogDescription>
-                    Selecciona uno o más tipos de categorías de la lista, o añade una personalizada. Las categorías que ya existen serán ignoradas.
-                </DialogDescription>
-            </DialogHeader>
-            <CategoryForm 
-                onSubmit={handleAddCategories} 
-                onCancel={() => setCategoryDialogOpen(false)}
-                existingCategories={categories}
-            />
-          </DialogContent>
-       </Dialog>
-       
-       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta acción no se puede deshacer. Se eliminará permanentemente la categoría <strong>{categoryToDelete?.name}</strong> y todos los recursos que contiene.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDelete}
-              className="bg-destructive hover:bg-destructive/90"
-            >
-              Sí, eliminar
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
+         <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Esta acción no se puede deshacer. Se eliminará permanentemente la categoría <strong>{categoryToDelete?.name}</strong> y todos los recursos que contiene.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={confirmDelete}
+                className="bg-destructive hover:bg-destructive/90"
+              >
+                Sí, eliminar
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
     </>
   );
 }
