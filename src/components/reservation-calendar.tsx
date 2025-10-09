@@ -343,7 +343,12 @@ export function ReservationCalendar({
 
   function DesktopView() {
     return (
-      <div className="mt-4 border rounded-lg overflow-hidden">
+      <div className="mt-4 space-y-4">
+        {/* Navegador de semanas para escritorio */}
+        <WeekNavigator />
+
+        {/* Calendario de escritorio */}
+        <div className="border rounded-lg overflow-hidden">
           <Table>
               <TableHeader>
                   <TableRow>
@@ -421,6 +426,7 @@ export function ReservationCalendar({
                   ))}
               </TableBody>
           </Table>
+        </div>
       </div>
     );
   }
@@ -452,7 +458,7 @@ export function ReservationCalendar({
               <PopoverContent className="w-auto p-0" align="end">
                 <Calendar
                   mode="single"
-                  selected={currentDate}
+                  selected={currentWeekDate}
                   onSelect={handleDateSelect}
                   initialFocus
                   locale={es}
