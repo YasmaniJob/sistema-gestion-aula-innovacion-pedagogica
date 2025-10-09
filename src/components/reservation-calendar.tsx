@@ -167,8 +167,14 @@ export function ReservationCalendar({
   const onDateChange = externalOnDateChange ?? setInternalCurrentDate;
 
   // Estado separado para la semana mostrada vs día seleccionado
-  const [currentWeekDate, setCurrentWeekDate] = useState(currentDate);
-  const [selectedDay, setSelectedDay] = useState(currentDate);
+  const [currentWeekDate, setCurrentWeekDate] = useState(() => {
+    console.log('Initializing currentWeekDate with:', currentDate);
+    return currentDate;
+  });
+  const [selectedDay, setSelectedDay] = useState(() => {
+    console.log('Initializing selectedDay with:', currentDate);
+    return currentDate;
+  });
   const [isCalendarOpen, setCalendarOpen] = useState(false);
   const isMobile = useIsMobile();
   const [isClient, setIsClient] = useState(false);
@@ -192,25 +198,29 @@ export function ReservationCalendar({
   // Sync currentWeekDate with external currentDate changes (like from parent component)
   useEffect(() => {
     if (externalCurrentDate && !isSameDay(currentWeekDate, externalCurrentDate)) {
+      console.log('External currentDate changed, updating currentWeekDate:', externalCurrentDate);
       setCurrentWeekDate(externalCurrentDate);
-      // When week changes externally, try to keep selectedDay within the new week
-      const newWeekStart = startOfWeek(externalCurrentDate, { weekStartsOn: 1 });
-      const newWeekDays = Array.from({ length: 5 }, (_, i) => addDays(newWeekStart, i));
-
-      // If selectedDay is not in the new week, select the first day of the new week
-      const isSelectedDayInNewWeek = newWeekDays.some(day => isSameDay(day, selectedDay));
-      if (!isSelectedDayInNewWeek) {
-        setSelectedDay(newWeekDays[0]);
-      }
     }
-  }, [externalCurrentDate, currentWeekDate, selectedDay]);
+  }, [externalCurrentDate]);
 
   // Calculate week data based on currentWeekDate
-  const weekStart = useMemo(() => startOfWeek(currentWeekDate, { weekStartsOn: 1 }), [currentWeekDate]);
-  const weekEnd = useMemo(() => endOfWeek(currentWeekDate, { weekStartsOn: 1 }), [currentWeekDate]);
+  const weekStart = useMemo(() => {
+    const start = startOfWeek(currentWeekDate, { weekStartsOn: 1 });
+    console.log('Calculated weekStart:', start);
+    return start;
+  }, [currentWeekDate]);
+
+  const weekEnd = useMemo(() => {
+    const end = endOfWeek(currentWeekDate, { weekStartsOn: 1 });
+    console.log('Calculated weekEnd:', end);
+    return end;
+  }, [currentWeekDate]);
+
   const weekDays = useMemo(() => {
     const start = startOfWeek(currentWeekDate, { weekStartsOn: 1 });
-    return Array.from({ length: 5 }, (_, i) => addDays(start, i));
+    const days = Array.from({ length: 5 }, (_, i) => addDays(start, i));
+    console.log('Calculated weekDays:', days);
+    return days;
   }, [currentWeekDate]);
 
   const handlePreviousWeek = useCallback(() => {
@@ -248,6 +258,7 @@ export function ReservationCalendar({
   useEffect(() => {
     const isSelectedDayInCurrentWeek = weekDays.some(day => isSameDay(day, selectedDay));
     if (!isSelectedDayInCurrentWeek && weekDays.length > 0) {
+      console.log('Selected day not in current week, updating to first day:', weekDays[0]);
       setSelectedDay(weekDays[0]);
     }
   }, [weekDays, selectedDay]);
