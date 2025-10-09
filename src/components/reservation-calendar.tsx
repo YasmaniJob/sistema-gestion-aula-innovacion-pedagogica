@@ -213,8 +213,23 @@ export function ReservationCalendar({
     return Array.from({ length: 5 }, (_, i) => addDays(start, i));
   }, [currentWeekDate]);
 
-  const handlePreviousWeek = () => setCurrentWeekDate(prev => subWeeks(prev, 1));
-  const handleNextWeek = () => setCurrentWeekDate(prev => addWeeks(prev, 1));
+  const handlePreviousWeek = useCallback(() => {
+    console.log('Previous week clicked');
+    setCurrentWeekDate(prev => {
+      const newDate = subWeeks(prev, 1);
+      console.log('New week date:', newDate);
+      return newDate;
+    });
+  }, []);
+
+  const handleNextWeek = useCallback(() => {
+    console.log('Next week clicked');
+    setCurrentWeekDate(prev => {
+      const newDate = addWeeks(prev, 1);
+      console.log('New week date:', newDate);
+      return newDate;
+    });
+  }, []);
   const handleToday = () => {
     const today = new Date();
     setCurrentWeekDate(today);
