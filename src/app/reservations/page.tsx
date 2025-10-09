@@ -22,7 +22,7 @@ import { toast } from '@/hooks/use-toast';
 import { usePageTitle } from '@/hooks/use-page-title';
 
 export default function ReservationsPage() {
-  useAuthorization('Admin');
+  useAuthorization({ requiredRole: 'Admin' });
   usePageTitle('Gestión de Reservas');
   const { reservations, updateReservationStatus } = useData();
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -31,13 +31,14 @@ export default function ReservationsPage() {
   const weekStart = useMemo(() => startOfWeek(currentDate, { weekStartsOn: 1 }), [currentDate]);
   const weekEnd = useMemo(() => endOfWeek(currentDate, { weekStartsOn: 1 }), [currentDate]);
 
-  const weeklyReservations = useMemo(() => {
-    return reservations.filter(r => isWithinInterval(r.startTime, { start: weekStart, end: weekEnd }));
+  // Get current week reservations for display purposes (but pass all reservations to calendar)
+  const currentWeekReservations = useMemo(() => {
+    return reservations.filter((r: any) => isWithinInterval(r.startTime, { start: weekStart, end: weekEnd }));
   }, [reservations, weekStart, weekEnd]);
 
 
   const handleExportExcel = () => {
-    const dataToExport = weeklyReservations.map(res => ({
+    const dataToExport = currentWeekReservations.map((res: any) => ({
       'Fecha': format(res.startTime, "dd/MM/yyyy", { locale: es }),
       'Hora': res.purposeDetails?.activityName,
       'Docente': res.user.name,
@@ -45,20 +46,20 @@ export default function ReservationsPage() {
       'Actividad': res.purposeDetails.activityName,
       'Estado': res.status,
     }));
-    
+
     const worksheet = XLSX.utils.json_to_sheet(dataToExport);
     worksheet['!cols'] = [
       { wch: 12 }, { wch: 15 }, { wch: 30 }, { wch: 15 }, { wch: 30 }, { wch: 15 },
     ];
-    
+
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Reservas');
     XLSX.writeFile(workbook, `reservas_semana_${format(weekStart, 'yyyy-MM-dd')}.xlsx`);
-    
+
     setIsExportOpen(false);
     toast({
       title: "Exportación a Excel Exitosa",
-      description: `Se han exportado ${weeklyReservations.length} reservas.`
+      description: `Se han exportado ${currentWeekReservations.length} reservas.`
     });
   }
 
@@ -98,12 +99,12 @@ export default function ReservationsPage() {
     doc.text('Resumen Ejecutivo', 14, 50);
     
     const stats = {
-      total: weeklyReservations.length,
-      confirmadas: weeklyReservations.filter(r => r.status === 'Confirmada').length,
-      completadas: weeklyReservations.filter(r => r.status === 'Completada').length,
-      canceladas: weeklyReservations.filter(r => r.status === 'Cancelada').length,
-      aprendizaje: weeklyReservations.filter(r => r.purpose === 'aprendizaje').length,
-      institucional: weeklyReservations.filter(r => r.purpose === 'institucional').length
+      total: currentWeekReservations.length,
+      confirmadas: currentWeekReservations.filter((r: any) => r.status === 'Confirmada').length,
+      completadas: currentWeekReservations.filter((r: any) => r.status === 'Completada').length,
+      canceladas: currentWeekReservations.filter((r: any) => r.status === 'Cancelada').length,
+      aprendizaje: currentWeekReservations.filter((r: any) => r.purpose === 'aprendizaje').length,
+      institucional: currentWeekReservations.filter((r: any) => r.purpose === 'institucional').length
     };
     
     doc.setFontSize(11);
@@ -126,7 +127,7 @@ export default function ReservationsPage() {
     doc.line(14, yPos + 8, 196, yPos + 8);
     
     // Preparar datos de la tabla con más información
-    const tableData = weeklyReservations.map(res => {
+    const tableData = currentWeekReservations.map((res: any) => {
       const purpose = res.purpose === 'aprendizaje' ? 'Académico' : 'Institucional';
       const details = res.purpose === 'aprendizaje' 
         ? `${res.purposeDetails?.area || 'N/A'} - ${res.purposeDetails?.grade || 'N/A'}° ${res.purposeDetails?.section || 'N/A'}`
@@ -226,7 +227,7 @@ export default function ReservationsPage() {
     setIsExportOpen(false);
     toast({
       title: "Exportación a PDF Exitosa",
-      description: `Se ha generado un reporte completo con ${weeklyReservations.length} reservas.`
+      description: `Se ha generado un reporte completo con ${currentWeekReservations.length} reservas.`
     });
   }
 
@@ -258,7 +259,7 @@ export default function ReservationsPage() {
 
       <ReservationCalendar
         mode="view"
-        reservations={weeklyReservations}
+        reservations={reservations}
         currentDate={currentDate}
         onDateChange={setCurrentDate}
         onUpdateReservationStatus={updateReservationStatus}
@@ -269,8 +270,8 @@ export default function ReservationsPage() {
         onOpenChange={setIsExportOpen}
         onExportExcel={handleExportExcel}
         onExportPDF={handleExportPDF}
-        itemCount={weeklyReservations.length}
-        itemName={`Reservas de la Semana`}
+        itemCount={currentWeekReservations.length}
+        itemName={`Reservas de la Semana del ${format(weekStart, 'd')} al ${format(weekEnd, "d 'de' MMMM, yyyy", { locale: es })}`}
       />
     </>
   );
